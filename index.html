@@ -28,16 +28,13 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // ⚠️ การตั้งค่าระบบ (เอา URL จาก Apps Script มาใส่ตรงนี้)
+        // ⚠️ การตั้งค่าระบบ
         // ==========================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfq999r-lWQcNZmYZWeUxiWNmNOo5q1MQwU5E7CQruSsBliCPMOueVOoRnw5ElbkFOfQ/exec";
         const GITHUB_PAGES_URL = window.location.origin + window.location.pathname; 
-
         const HARDCODED_LOGO = "https://i.postimg.cc/wBN5btrp/rong-re-yn-kham-wng.png";
         const HARDCODED_NAME = "STUDENT COUNCIL • KHAMMUANG SCHOOL";
-        const PRIMARY_COLOR = "#C8102E";
 
-        // ประเภทคำถามทั้งหมด
         const FIELD_TYPES = [
             { id: 'text', label: 'คำตอบสั้น', icon: 'ph-text-t' },
             { id: 'longtext', label: 'ย่อหน้า', icon: 'ph-text-align-left' },
@@ -116,7 +113,7 @@
                     <div className="text-center p-8 text-gray-400 animate-pulse"><i className="ph ph-spinner-gap animate-spin text-4xl mb-2"></i><p>กำลังโหลดข้อมูล...</p></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
-                        {events.map(event => (
+                        {events?.map(event => (
                             <div key={event.id} onClick={() => navigateTo('event-detail', event.slug)} className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col active:scale-[0.98] h-full">
                                 <div className="h-40 md:h-48 relative overflow-hidden bg-gray-100">
                                     <img src={event.image || 'https://via.placeholder.com/400x300?text=No+Image'} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -138,7 +135,7 @@
                                 </div>
                             </div>
                         ))}
-                        {events.length === 0 && <div className="col-span-full text-center p-8 bg-white border border-dashed rounded-2xl text-gray-500"><i className="ph ph-calendar-x text-4xl mb-2 text-gray-300"></i><p>ยังไม่มีกิจกรรมในขณะนี้</p></div>}
+                        {(!events || events.length === 0) && <div className="col-span-full text-center p-8 bg-white border border-dashed rounded-2xl text-gray-500"><i className="ph ph-calendar-x text-4xl mb-2 text-gray-300"></i><p>ยังไม่มีกิจกรรมในขณะนี้</p></div>}
                     </div>
                 )}
             </div>
@@ -161,7 +158,7 @@
             return (
                 <div className="pb-24 animate-in fade-in bg-white min-h-screen max-w-2xl mx-auto w-full relative">
                     <div className="relative h-64 md:h-80 w-full bg-gray-900">
-                        <img src={event.image} alt={event.title} className="w-full h-full object-cover opacity-80" />
+                        <img src={event.image || 'https://via.placeholder.com/800x400'} alt={event.title} className="w-full h-full object-cover opacity-80" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                         <div className="absolute bottom-4 left-4 right-4 text-white">
                             <span className="inline-block px-2.5 py-1 bg-[#C8102E] rounded-md text-[10px] font-bold mb-2">{event.type}</span>
@@ -232,25 +229,16 @@
             const handleFileUpload = (fieldLabel, e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                
-                // Limit file size to 5MB
-                if (file.size > 5 * 1024 * 1024) {
-                    setErrors({ ...errors, [fieldLabel]: 'ไฟล์มีขนาดใหญ่เกิน 5MB' });
-                    e.target.value = null; // Clear input
-                    return;
-                }
+                if (file.size > 5 * 1024 * 1024) { setErrors({ ...errors, [fieldLabel]: 'ไฟล์มีขนาดใหญ่เกิน 5MB' }); e.target.value = null; return; }
 
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    setFormData({ ...formData, [fieldLabel]: reader.result }); // Save base64
-                    if (errors[fieldLabel]) setErrors({ ...errors, [fieldLabel]: null });
-                };
+                reader.onloadend = () => { setFormData({ ...formData, [fieldLabel]: reader.result }); if (errors[fieldLabel]) setErrors({ ...errors, [fieldLabel]: null }); };
                 reader.readAsDataURL(file);
             };
 
             const handleSubmit = async () => {
                 const newErrors = {};
-                event.formFields.forEach(f => {
+                event.formFields?.forEach(f => {
                     if (f.required) {
                         const val = formData[f.label];
                         if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
@@ -274,19 +262,17 @@
                     </div>
 
                     <div className="space-y-6">
-                        {event.formFields.map((field, idx) => (
+                        {event.formFields?.map((field, idx) => (
                             <div key={idx} className={`bg-[#F9FAFB] p-5 md:p-6 rounded-2xl border transition-all ${errors[field.label] ? 'border-red-400 bg-red-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                                <label className="block font-bold text-gray-800 mb-4 text-sm md:text-base">
-                                    {field.label} {field.required && <span className="text-[#C8102E] text-lg leading-none">*</span>}
-                                </label>
+                                <div className="mb-3">
+                                    <label className="block font-bold text-gray-800 text-sm md:text-base">
+                                        {field.label} {field.required && <span className="text-[#C8102E] text-lg leading-none">*</span>}
+                                    </label>
+                                    {field.description && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{field.description}</p>}
+                                </div>
                                 
-                                {/* 1. คำตอบสั้น */}
-                                {field.type === 'text' && <input type="text" placeholder="คำตอบของคุณ" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm" />}
-                                
-                                {/* 2. ย่อหน้า */}
-                                {field.type === 'longtext' && <textarea placeholder="คำตอบของคุณ" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none min-h-[100px] shadow-sm"></textarea>}
-                                
-                                {/* 3. Dropdown */}
+                                {field.type === 'text' && <input type="text" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm" />}
+                                {field.type === 'longtext' && <textarea value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none min-h-[100px] shadow-sm"></textarea>}
                                 {field.type === 'dropdown' && (
                                     <div className="relative">
                                         <select value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none bg-white appearance-none shadow-sm cursor-pointer">
@@ -296,34 +282,21 @@
                                         <i className="ph ph-caret-down absolute right-4 top-4 text-gray-400 pointer-events-none"></i>
                                     </div>
                                 )}
-                                
-                                {/* 4. Radio / Checkbox */}
                                 {(field.type === 'radio' || field.type === 'checkbox') && (
                                     <div className="flex flex-col gap-3">
                                         {(field.options || []).map((opt, i) => (
                                             <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                                                <div className="mt-0.5">
-                                                    <input type={field.type} name={field.label} value={opt} checked={field.type==='radio' ? formData[field.label]===opt : (formData[field.label]||[]).includes(opt)} onChange={(e) => handleInputChange(field.label, e.target.value, field.type==='checkbox')} className="w-5 h-5 accent-[#C8102E] cursor-pointer" />
-                                                </div>
+                                                <div className="mt-0.5"><input type={field.type} name={field.label} value={opt} checked={field.type==='radio' ? formData[field.label]===opt : (formData[field.label]||[]).includes(opt)} onChange={(e) => handleInputChange(field.label, e.target.value, field.type==='checkbox')} className="w-5 h-5 accent-[#C8102E] cursor-pointer" /></div>
                                                 <span className="text-sm font-medium text-gray-700 group-hover:text-black">{opt}</span>
                                             </label>
                                         ))}
                                     </div>
                                 )}
-
-                                {/* 5. Date */}
                                 {field.type === 'date' && <input type="date" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
-
-                                {/* 6. Time */}
                                 {field.type === 'time' && <input type="time" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
-
-                                {/* 7. Linear Scale */}
                                 {field.type === 'scale' && (
                                     <div className="bg-white p-4 rounded-xl border shadow-sm">
-                                        <div className="flex justify-between text-xs text-gray-500 mb-3 font-bold px-2">
-                                            <span>{field.scaleMinLabel || 'น้อย'}</span>
-                                            <span>{field.scaleMaxLabel || 'มาก'}</span>
-                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-500 mb-3 font-bold px-2"><span>{field.scaleMinLabel || 'น้อย'}</span><span>{field.scaleMaxLabel || 'มาก'}</span></div>
                                         <div className="flex justify-between items-center px-2">
                                             {Array.from({length: (field.scaleMax||5) - (field.scaleMin||1) + 1}, (_, i) => (field.scaleMin||1) + i).map(num => (
                                                 <label key={num} className="flex flex-col items-center gap-2 cursor-pointer">
@@ -334,27 +307,17 @@
                                         </div>
                                     </div>
                                 )}
-
-                                {/* 8. File Upload */}
                                 {field.type === 'file' && (
                                     <div>
                                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
-                                            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-500">
-                                                <i className="ph ph-upload-simple text-3xl mb-2 text-[#C8102E]"></i>
-                                                <p className="text-sm font-bold">คลิกเพื่ออัปโหลดไฟล์</p>
-                                                <p className="text-xs mt-1">(สูงสุด 5MB)</p>
-                                            </div>
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-500"><i className="ph ph-upload-simple text-3xl mb-2 text-[#C8102E]"></i><p className="text-sm font-bold">คลิกเพื่ออัปโหลดไฟล์</p><p className="text-xs mt-1">(สูงสุด 5MB)</p></div>
                                             <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileUpload(field.label, e)} />
                                         </label>
                                         {formData[field.label] && (
-                                            <div className="mt-3 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                                                <span className="text-xs font-bold text-green-700 flex items-center gap-2"><i className="ph ph-check-circle text-lg"></i> แนบไฟล์เรียบร้อยแล้ว</span>
-                                                <button onClick={()=>handleInputChange(field.label, null)} className="text-xs text-red-500 hover:underline">ลบไฟล์</button>
-                                            </div>
+                                            <div className="mt-3 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"><span className="text-xs font-bold text-green-700 flex items-center gap-2"><i className="ph ph-check-circle text-lg"></i> แนบไฟล์เรียบร้อย</span><button onClick={()=>handleInputChange(field.label, null)} className="text-xs text-red-500 hover:underline">ลบไฟล์</button></div>
                                         )}
                                     </div>
                                 )}
-
                                 {errors[field.label] && <p className="text-red-500 text-sm mt-3 font-bold flex items-center gap-1.5"><i className="ph ph-warning-circle text-lg"></i> {errors[field.label]}</p>}
                             </div>
                         ))}
@@ -388,63 +351,72 @@
             const [activeTab, setActiveTab] = useState('overview');
             const [selectedEventId, setSelectedEventId] = useState('all');
             
-            // Event Builder State
             const [isCreating, setIsCreating] = useState(false);
-            const [newEvent, setNewEvent] = useState({ 
-                title:'', type:'', details:'', date:'', time:'', location:'', image:'', capacity:'', 
-                openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', type: 'text', required: true}] 
-            });
+            const [isEditing, setIsEditing] = useState(false);
+            
+            // Password State
+            const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
+            
+            const defaultEvent = { title:'', type:'', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
+            const [newEvent, setNewEvent] = useState(defaultEvent);
 
-            // Handle adding/removing options for multiple choice fields
             const updateFieldType = (idx, type) => {
-                let nf = [...newEvent.formFields];
+                let nf = [...(newEvent.formFields || [])];
                 nf[idx].type = type;
                 if (['dropdown', 'radio', 'checkbox'].includes(type) && !nf[idx].options) nf[idx].options = ['ตัวเลือก 1'];
                 if (type === 'scale') { nf[idx].scaleMin = 1; nf[idx].scaleMax = 5; nf[idx].scaleMinLabel = 'น้อย'; nf[idx].scaleMaxLabel = 'มาก'; }
                 setNewEvent({...newEvent, formFields: nf});
             }
+            const addOptionToField = (fieldIdx) => { let nf = [...newEvent.formFields]; nf[fieldIdx].options.push(`ตัวเลือก ${nf[fieldIdx].options.length + 1}`); setNewEvent({...newEvent, formFields: nf}); }
+            const updateOptionText = (fieldIdx, optIdx, val) => { let nf = [...newEvent.formFields]; nf[fieldIdx].options[optIdx] = val; setNewEvent({...newEvent, formFields: nf}); }
+            const removeOption = (fieldIdx, optIdx) => { let nf = [...newEvent.formFields]; nf[fieldIdx].options.splice(optIdx, 1); setNewEvent({...newEvent, formFields: nf}); }
+            const removeField = (fieldIdx) => { let nf = [...newEvent.formFields]; nf.splice(fieldIdx, 1); setNewEvent({...newEvent, formFields: nf}); }
 
-            const addOptionToField = (fieldIdx) => {
-                let nf = [...newEvent.formFields];
-                nf[fieldIdx].options.push(`ตัวเลือก ${nf[fieldIdx].options.length + 1}`);
-                setNewEvent({...newEvent, formFields: nf});
-            }
-
-            const updateOptionText = (fieldIdx, optIdx, val) => {
-                let nf = [...newEvent.formFields];
-                nf[fieldIdx].options[optIdx] = val;
-                setNewEvent({...newEvent, formFields: nf});
-            }
-
-            const removeOption = (fieldIdx, optIdx) => {
-                let nf = [...newEvent.formFields];
-                nf[fieldIdx].options.splice(optIdx, 1);
-                setNewEvent({...newEvent, formFields: nf});
-            }
-
-            const removeField = (fieldIdx) => {
-                let nf = [...newEvent.formFields];
-                nf.splice(fieldIdx, 1);
-                setNewEvent({...newEvent, formFields: nf});
-            }
-
-            const handleCreateEvent = async () => {
+            const handleSaveEvent = async () => {
                 if(!newEvent.title || !newEvent.date) return showAlert('กรุณากรอกชื่อกิจกรรมและวันที่ให้ครบถ้วน', 'error');
-                const eventId = `EVT-${Math.floor(Math.random() * 10000)}`;
-                const slug = newEvent.title.toLowerCase().replace(/[^a-z0-9ก-๙]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random()*100);
-                const payload = { action: 'createEvent', event: { ...newEvent, id: eventId, slug, status: 'open' } };
                 
                 showAlert('กำลังบันทึกข้อมูล...', 'info');
+                let payload;
+                if (isEditing) {
+                    payload = { action: 'updateEvent', event: newEvent };
+                } else {
+                    const eventId = `EVT-${Math.floor(Math.random() * 10000)}`;
+                    const slug = newEvent.title.toLowerCase().replace(/[^a-z0-9ก-๙]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random()*100);
+                    payload = { action: 'createEvent', event: { ...newEvent, id: eventId, slug, status: 'open' } };
+                }
+                
                 const res = await fetchApi(payload);
-                if (res.status === 'success') { showAlert('สร้างกิจกรรมและฟอร์มรับสมัครสำเร็จ!', 'success'); setIsCreating(false); }
+                if (res.status === 'success') { showAlert('บันทึกสำเร็จ!', 'success'); setIsCreating(false); setIsEditing(false); setNewEvent(defaultEvent); }
+            };
+
+            const openEditMode = (event) => {
+                setNewEvent({...event, formFields: event.formFields || []});
+                setIsEditing(true);
+                setIsCreating(true);
             };
 
             const toggleStatus = async (eventId, currentStatus) => {
                 const newStatus = currentStatus === 'open' ? 'closed' : 'open';
                 await fetchApi({ action: 'toggleEventStatus', eventId, status: newStatus });
             };
+            
+            const handleDeleteEvent = async (eventId) => {
+                if(confirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้? ข้อมูลจะไม่สามารถกู้คืนได้")) {
+                    showAlert('กำลังลบข้อมูล...', 'info');
+                    const res = await fetchApi({ action: 'deleteEvent', eventId });
+                    if(res.status === 'success') showAlert('ลบสำเร็จ', 'success');
+                }
+            };
 
-            // Export to CSV Function
+            const handleChangePassword = async (e) => {
+                e.preventDefault();
+                if(passwords.newPass.length < 8) return showAlert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัว', 'error');
+                showAlert('กำลังเปลี่ยนรหัสผ่าน...', 'info');
+                const res = await fetchApi({ action: 'changePassword', oldPassword: passwords.oldPass, newPassword: passwords.newPass });
+                if(res.status === 'success') { showAlert('เปลี่ยนรหัสผ่านสำเร็จ', 'success'); setPasswords({oldPass:'', newPass:''}); }
+                else showAlert(res.message || 'รหัสเดิมไม่ถูกต้อง', 'error');
+            };
+
             const exportCSV = () => {
                 const filtered = applicants.filter(a => selectedEventId === 'all' || a.eventId === selectedEventId);
                 if (filtered.length === 0) return showAlert('ไม่มีข้อมูลให้ Export', 'error');
@@ -454,57 +426,48 @@
                 headers = Array.from(headers);
 
                 let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n"; 
-                
                 filtered.forEach(a => {
-                    const evtTitle = events.find(e=>e.id === a.eventId)?.title || '';
+                    const evtTitle = events?.find(e=>e.id === a.eventId)?.title || '';
                     let row = [a.timestamp, `"${evtTitle}"`];
-                    
                     headers.slice(2).forEach(h => {
                         let val = a.answers[h] || "";
                         if (Array.isArray(val)) val = val.join(" / ");
-                        if (typeof val === 'string' && val.startsWith('http')) val = `"${val}"`; // Make drive link clickable in CSV if possible
+                        if (typeof val === 'string' && val.startsWith('http')) val = `"${val}"`; 
                         row.push(`"${String(val).replace(/"/g, '""')}"`);
                     });
                     csvContent += row.join(",") + "\n";
                 });
-
-                const link = document.createElement("a");
-                link.setAttribute("href", encodeURI(csvContent));
-                link.setAttribute("download", `Applicants_${selectedEventId}_${new Date().getTime()}.csv`);
-                document.body.appendChild(link);
-                link.click(); document.body.removeChild(link);
+                const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `Applicants_${selectedEventId}_${Date.now()}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
             return (
                 <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-[100]">
-                    {/* Admin Sidebar (Tablet/Desktop) */}
                     <div className="w-64 bg-white border-r hidden md:flex flex-col shadow-sm">
-                        <div className="p-5 border-b bg-red-50">
-                            <h2 className="font-bold text-[#C8102E] text-lg leading-tight">Admin Panel</h2>
-                            <p className="text-[10px] text-[#C8102E] font-bold tracking-widest mt-1">EVENT SYSTEM</p>
+                        <div className="p-5 border-b bg-red-50 flex items-center gap-3">
+                            <img src={HARDCODED_LOGO} className="w-10 h-10 rounded-full border border-red-200" />
+                            <div><h2 className="font-bold text-[#C8102E] leading-tight">Admin</h2><p className="text-[10px] text-gray-500 font-bold">EVENT SYSTEM</p></div>
                         </div>
                         <div className="p-3 space-y-1">
                             <button onClick={()=>setActiveTab('overview')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-chart-pie-slice text-lg"></i> ภาพรวม</button>
                             <button onClick={()=>setActiveTab('events')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='events'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-calendar text-lg"></i> จัดการกิจกรรม</button>
                             <button onClick={()=>setActiveTab('applicants')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='applicants'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-users text-lg"></i> รายชื่อผู้สมัคร</button>
+                            <button onClick={()=>setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='settings'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-gear text-lg"></i> ตั้งค่า</button>
                         </div>
                         <div className="mt-auto p-4 border-t">
                             <button onClick={()=>setIsAdminAuth(false)} className="w-full flex justify-center items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-colors"><i className="ph ph-sign-out text-lg"></i> ออกระบบ</button>
                         </div>
                     </div>
 
-                    {/* Main Content Area */}
                     <div className="flex-1 flex flex-col h-full overflow-hidden">
                         <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm md:hidden">
-                            <div className="font-bold text-[#C8102E] flex items-center gap-2"><i className="ph ph-shield-check text-xl"></i> Admin Panel</div>
+                            <div className="font-bold text-[#C8102E] flex items-center gap-2"><img src={HARDCODED_LOGO} className="w-8 h-8 rounded-full border" /> Admin Panel</div>
                             <button onClick={()=>setIsAdminAuth(false)} className="bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700">ออกระบบ</button>
                         </div>
                         
-                        {/* Mobile Tabs */}
                         <div className="bg-white border-b px-2 flex md:hidden overflow-x-auto hide-scrollbar z-10">
-                            {['overview', 'events', 'applicants'].map(tab => (
+                            {['overview', 'events', 'applicants', 'settings'].map(tab => (
                                 <button key={tab} onClick={()=>setActiveTab(tab)} className={`px-4 py-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab===tab?'border-[#C8102E] text-[#C8102E]':'border-transparent text-gray-500'}`}>
-                                    {tab === 'overview' ? 'ภาพรวม' : tab === 'events' ? 'จัดการกิจกรรม' : 'รายชื่อผู้สมัคร'}
+                                    {tab === 'overview' ? 'ภาพรวม' : tab === 'events' ? 'กิจกรรม' : tab === 'applicants' ? 'รายชื่อ' : 'ตั้งค่า'}
                                 </button>
                             ))}
                         </div>
@@ -518,35 +481,34 @@
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-blue-500">
                                             <p className="text-sm text-gray-500 font-bold mb-1">กิจกรรมทั้งหมด</p>
-                                            <p className="font-bold text-3xl">{events.length}</p>
+                                            <p className="font-bold text-3xl">{events?.length || 0}</p>
                                         </div>
                                         <div className="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-green-500">
                                             <p className="text-sm text-gray-500 font-bold mb-1 text-green-600">เปิดรับอยู่</p>
-                                            <p className="font-bold text-3xl text-green-600">{events.filter(e=>e.status==='open').length}</p>
+                                            <p className="font-bold text-3xl text-green-600">{events?.filter(e=>e.status==='open').length || 0}</p>
                                         </div>
                                         <div className="bg-white p-5 rounded-2xl border shadow-sm col-span-2 md:col-span-2 flex items-center justify-between border-l-4 border-l-[#C8102E]">
                                             <div>
                                                 <p className="text-sm text-gray-500 font-bold mb-1 text-[#C8102E]">ยอดผู้สมัครรวมทั้งหมด</p>
-                                                <p className="font-bold text-4xl text-[#C8102E]">{applicants.length}</p>
+                                                <p className="font-bold text-4xl text-[#C8102E]">{applicants?.length || 0}</p>
                                             </div>
                                             <div className="w-14 h-14 bg-red-50 text-[#C8102E] rounded-full flex items-center justify-center"><i className="ph ph-users text-3xl"></i></div>
                                         </div>
                                     </div>
 
-                                    {/* Recent Applicants Mini-Table */}
                                     <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
                                         <div className="p-4 border-b bg-gray-50"><h3 className="font-bold text-gray-800 flex items-center gap-2"><i className="ph ph-clock text-[#C8102E]"></i> ผู้สมัครล่าสุด</h3></div>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm text-left">
                                                 <tbody className="divide-y">
-                                                    {applicants.slice(0,5).map((app, i) => (
+                                                    {applicants?.slice(0,5).map((app, i) => (
                                                         <tr key={i} className="hover:bg-gray-50">
                                                             <td className="p-4 text-xs text-gray-500 whitespace-nowrap">{app.timestamp}</td>
                                                             <td className="p-4 font-bold text-gray-800">{Object.values(app.answers)[0] || 'ไม่มีชื่อ'}</td>
-                                                            <td className="p-4 text-xs text-gray-600">{events.find(e=>e.id===app.eventId)?.title || '-'}</td>
+                                                            <td className="p-4 text-xs text-gray-600">{events?.find(e=>e.id===app.eventId)?.title || '-'}</td>
                                                         </tr>
                                                     ))}
-                                                    {applicants.length === 0 && <tr><td colSpan="3" className="p-8 text-center text-gray-500">ยังไม่มีผู้สมัคร</td></tr>}
+                                                    {(!applicants || applicants.length === 0) && <tr><td colSpan="3" className="p-8 text-center text-gray-500">ยังไม่มีผู้สมัคร</td></tr>}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -554,19 +516,19 @@
                                 </div>
                             )}
 
-                            {/* EVENTS TAB (With Full Google Forms Builder) */}
+                            {/* EVENTS TAB */}
                             {activeTab === 'events' && (
                                 <div className="max-w-5xl mx-auto animate-in fade-in space-y-6">
                                     {!isCreating ? (
                                         <>
                                             <div className="flex justify-between items-center">
                                                 <h2 className="font-bold text-xl text-gray-800">จัดการกิจกรรม</h2>
-                                                <button onClick={()=>setIsCreating(true)} className="bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-[#a10d25] transition-colors flex items-center gap-2">
+                                                <button onClick={()=>{setNewEvent(defaultEvent); setIsEditing(false); setIsCreating(true);}} className="bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-[#a10d25] transition-colors flex items-center gap-2">
                                                     <i className="ph ph-plus-circle text-lg"></i> สร้างกิจกรรม
                                                 </button>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                                {events.map(e => (
+                                                {events?.map(e => (
                                                     <div key={e.id} className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col group">
                                                         <div className="h-32 bg-gray-200 relative">
                                                             <img src={e.image || 'https://via.placeholder.com/400x200'} className="w-full h-full object-cover" />
@@ -575,54 +537,55 @@
                                                         <div className="p-4 flex-1 flex flex-col justify-between">
                                                             <div>
                                                                 <h4 className="font-bold text-sm mb-1">{e.title}</h4>
-                                                                <p className="text-[10px] text-gray-500 mb-3 flex items-center gap-1"><i className="ph ph-users"></i> ผู้สมัคร: {applicants.filter(a=>a.eventId===e.id).length} / {e.capacity||'∞'}</p>
+                                                                <p className="text-[10px] text-gray-500 mb-3 flex items-center gap-1"><i className="ph ph-users"></i> ผู้สมัคร: {applicants?.filter(a=>a.eventId===e.id).length} / {e.capacity||'∞'}</p>
                                                             </div>
-                                                            <button onClick={()=>toggleStatus(e.id, e.status)} className={`w-full py-2.5 rounded-xl text-xs font-bold transition-colors ${e.status==='open'?'bg-red-50 text-red-600 hover:bg-red-100':'bg-green-50 text-green-600 hover:bg-green-100'}`}>
-                                                                {e.status==='open' ? 'ปิดรับสมัคร (หยุดรับผู้สมัคร)' : 'เปิดรับสมัคร'}
-                                                            </button>
+                                                            <div className="space-y-2 mt-4">
+                                                                <button onClick={()=>toggleStatus(e.id, e.status)} className={`w-full py-2 rounded-lg text-xs font-bold transition-colors ${e.status==='open'?'bg-red-50 text-red-600 hover:bg-red-100':'bg-green-50 text-green-600 hover:bg-green-100'}`}>
+                                                                    {e.status==='open' ? 'ปิดรับสมัคร' : 'เปิดรับสมัคร'}
+                                                                </button>
+                                                                <div className="flex gap-2">
+                                                                    <button onClick={()=>openEditMode(e)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200"><i className="ph ph-pencil-simple"></i> แก้ไข</button>
+                                                                    <button onClick={()=>handleDeleteEvent(e.id)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-500"><i className="ph ph-trash"></i> ลบ</button>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
-                                                {events.length === 0 && <div className="col-span-full p-10 text-center border-2 border-dashed rounded-2xl text-gray-500">ยังไม่มีกิจกรรม ลองกดสร้างกิจกรรมใหม่ดูสิ!</div>}
+                                                {(!events || events.length === 0) && <div className="col-span-full p-10 text-center border-2 border-dashed rounded-2xl text-gray-500">ยังไม่มีกิจกรรม ลองกดสร้างกิจกรรมใหม่ดูสิ!</div>}
                                             </div>
                                         </>
                                     ) : (
                                         <div className="bg-white border rounded-3xl p-5 md:p-8 shadow-sm space-y-8">
                                             <div>
-                                                <h3 className="font-bold text-xl mb-1 text-gray-800 flex items-center gap-2"><i className="ph ph-calendar-plus text-[#C8102E]"></i> สร้างกิจกรรมใหม่</h3>
+                                                <h3 className="font-bold text-xl mb-1 text-gray-800 flex items-center gap-2"><i className="ph ph-calendar-plus text-[#C8102E]"></i> {isEditing ? 'แก้ไขกิจกรรม' : 'สร้างกิจกรรมใหม่'}</h3>
                                                 <p className="text-sm text-gray-500 border-b pb-4">กรอกรายละเอียดกิจกรรมและสร้างฟอร์มรับสมัคร</p>
                                             </div>
                                             
-                                            {/* 1. Basic Info */}
                                             <div className="space-y-4">
                                                 <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">1. ข้อมูลกิจกรรม</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">ชื่อกิจกรรม <span className="text-red-500">*</span></label><input type="text" onChange={e=>setNewEvent({...newEvent, title: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">ประเภทกิจกรรม</label><input type="text" placeholder="เช่น กีฬา, วิชาการ" onChange={e=>setNewEvent({...newEvent, type: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">รับจำนวนจำกัด (คน)</label><input type="number" placeholder="เว้นว่างถ้าไม่จำกัด" onChange={e=>setNewEvent({...newEvent, capacity: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">รายละเอียด</label><textarea rows="3" onChange={e=>setNewEvent({...newEvent, details: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50"></textarea></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันที่จัดกิจกรรม <span className="text-red-500">*</span></label><input type="text" placeholder="เช่น 12 ต.ค. 66" onChange={e=>setNewEvent({...newEvent, date: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">เวลา</label><input type="text" placeholder="เช่น 09:00 - 12:00" onChange={e=>setNewEvent({...newEvent, time: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">สถานที่</label><input type="text" onChange={e=>setNewEvent({...newEvent, location: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label><input type="text" placeholder="ใส่ลิงก์รูปภาพ (https://...)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">ชื่อกิจกรรม <span className="text-red-500">*</span></label><input type="text" value={newEvent.title} onChange={e=>setNewEvent({...newEvent, title: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">ประเภทกิจกรรม</label><input type="text" value={newEvent.type} placeholder="เช่น กีฬา, วิชาการ" onChange={e=>setNewEvent({...newEvent, type: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">รับจำนวนจำกัด (คน)</label><input type="number" value={newEvent.capacity} placeholder="เว้นว่างถ้าไม่จำกัด" onChange={e=>setNewEvent({...newEvent, capacity: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">รายละเอียด</label><textarea rows="3" value={newEvent.details} onChange={e=>setNewEvent({...newEvent, details: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50"></textarea></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันที่จัดกิจกรรม <span className="text-red-500">*</span></label><input type="text" value={newEvent.date} placeholder="เช่น 12 ต.ค. 66" onChange={e=>setNewEvent({...newEvent, date: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">เวลา</label><input type="text" value={newEvent.time} placeholder="เช่น 09:00 - 12:00" onChange={e=>setNewEvent({...newEvent, time: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">สถานที่</label><input type="text" value={newEvent.location} onChange={e=>setNewEvent({...newEvent, location: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label><input type="text" value={newEvent.image} placeholder="ใส่ลิงก์รูปภาพ (https://...)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                 </div>
                                             </div>
                                             
-                                            {/* 2. Advanced Form Builder */}
                                             <div className="space-y-4 pt-4 border-t">
                                                 <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">2. สร้างแบบฟอร์มรับสมัคร</h4>
-                                                <p className="text-xs text-gray-500 mb-2">ออกแบบคำถามให้ผู้สมัครกรอก (ปรับเปลี่ยนประเภทคำถามได้ที่ปุ่มเมนูขวา)</p>
                                                 
                                                 <div className="space-y-6">
-                                                    {newEvent.formFields.map((f, idx) => (
-                                                        <div key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group">
-                                                            {newEvent.formFields.length > 1 && (
+                                                    {(newEvent.formFields || []).map((f, idx) => (
+                                                        <div key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#C8102E] transition-colors">
+                                                            {(newEvent.formFields || []).length > 1 && (
                                                                 <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10"><i className="ph ph-x font-bold"></i></button>
                                                             )}
-                                                            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-4">
-                                                                <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white transition-colors outline-none font-bold text-gray-800 w-full rounded-t-lg" />
-                                                                
-                                                                {/* Dropdown ประเภทคำถาม */}
+                                                            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-2">
+                                                                <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white outline-none font-bold text-gray-800 w-full rounded-t-lg" />
                                                                 <div className="relative w-full md:w-auto min-w-[200px]">
                                                                     <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="w-full p-3 border rounded-xl text-sm bg-white outline-none cursor-pointer appearance-none shadow-sm pr-10 font-medium">
                                                                         {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
@@ -630,32 +593,35 @@
                                                                     <i className={`ph ${FIELD_TYPES.find(t=>t.id===f.type)?.icon} absolute right-4 top-3.5 text-gray-500 text-lg pointer-events-none`}></i>
                                                                 </div>
                                                             </div>
+
+                                                            {/* ส่วนสำหรับคำอธิบายเพิ่มเติม */}
+                                                            <input 
+                                                                type="text" 
+                                                                placeholder="คำอธิบายเพิ่มเติม (ไม่บังคับ) เช่น ระบุไซส์เสื้อ, ไม่ต้องใส่คำนำหน้า" 
+                                                                value={f.description || ''} 
+                                                                onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} 
+                                                                className="w-full p-2 mb-4 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-[#C8102E] outline-none text-gray-500" 
+                                                            />
                                                             
-                                                            {/* Options builder for Checkbox/Radio/Dropdown */}
                                                             {['dropdown', 'radio', 'checkbox'].includes(f.type) && (
                                                                 <div className="pl-2 space-y-3 mt-4">
-                                                                    {f.options.map((opt, optIdx) => (
+                                                                    {(f.options||[]).map((opt, optIdx) => (
                                                                         <div key={optIdx} className="flex gap-3 items-center">
                                                                             <i className={`text-gray-400 text-lg ${f.type==='radio'?'ph-circle':f.type==='checkbox'?'ph-square':'ph-list'}`}></i>
                                                                             <input type="text" value={opt} onChange={e=>updateOptionText(idx, optIdx, e.target.value)} className="flex-1 border-b p-2 text-sm outline-none focus:border-[#C8102E]" placeholder={`ตัวเลือกที่ ${optIdx+1}`} />
-                                                                            {f.options.length > 1 && (
-                                                                                <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500"><i className="ph ph-x"></i></button>
-                                                                            )}
+                                                                            {(f.options||[]).length > 1 && <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500"><i className="ph ph-x"></i></button>}
                                                                         </div>
                                                                     ))}
                                                                     <button onClick={()=>addOptionToField(idx)} className="text-sm font-bold text-[#C8102E] hover:underline mt-2 flex items-center gap-1 ml-7"><i className="ph ph-plus"></i> เพิ่มตัวเลือก</button>
                                                                 </div>
                                                             )}
 
-                                                            {/* Options for Linear Scale */}
                                                             {f.type === 'scale' && (
                                                                 <div className="flex flex-col gap-4 mt-4 bg-gray-50 p-4 rounded-xl border">
                                                                     <div className="flex items-center gap-4">
                                                                         <select value={f.scaleMin||1} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMin=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white"><option value="0">0</option><option value="1">1</option></select>
                                                                         <span>ถึง</span>
-                                                                        <select value={f.scaleMax||5} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMax=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white">
-                                                                            {[2,3,4,5,6,7,8,9,10].map(n=><option key={n} value={n}>{n}</option>)}
-                                                                        </select>
+                                                                        <select value={f.scaleMax||5} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMax=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white">{[2,3,4,5,6,7,8,9,10].map(n=><option key={n} value={n}>{n}</option>)}</select>
                                                                     </div>
                                                                     <div className="flex flex-col gap-2">
                                                                         <div className="flex items-center gap-3"><span className="text-sm w-8">{f.scaleMin||1}</span><input type="text" placeholder="ป้ายกำกับ (ไม่บังคับ)" value={f.scaleMinLabel||''} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMinLabel=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg text-sm flex-1" /></div>
@@ -664,26 +630,23 @@
                                                                 </div>
                                                             )}
 
-                                                            {/* Bottom Settings per Field */}
                                                             <div className="flex justify-end pt-4 mt-4 border-t">
                                                                 <label className="flex items-center gap-2 text-sm font-bold bg-gray-100 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                                                                    <input type="checkbox" checked={f.required} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].required=e.target.checked; setNewEvent({...newEvent, formFields: nf})}} className="accent-[#C8102E] w-5 h-5 cursor-pointer" />
-                                                                    จำเป็นต้องตอบ
+                                                                    <input type="checkbox" checked={f.required} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].required=e.target.checked; setNewEvent({...newEvent, formFields: nf})}} className="accent-[#C8102E] w-5 h-5 cursor-pointer" /> จำเป็นต้องตอบ
                                                                 </label>
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
 
-                                                <button onClick={()=>setNewEvent({...newEvent, formFields: [...newEvent.formFields, {id: Date.now(), label:'', type:'text', required:false}]})} className="mt-4 px-4 py-4 border-2 border-dashed border-gray-300 rounded-2xl text-sm font-bold text-gray-500 hover:bg-white hover:border-[#C8102E] hover:text-[#C8102E] transition-all w-full flex justify-center items-center gap-2">
+                                                <button onClick={()=>setNewEvent({...newEvent, formFields: [...(newEvent.formFields||[]), {id: Date.now(), label:'', type:'text', required:false, description:''}]})} className="mt-4 px-4 py-4 border-2 border-dashed border-gray-300 rounded-2xl text-sm font-bold text-gray-500 hover:bg-white hover:border-[#C8102E] hover:text-[#C8102E] transition-all w-full flex justify-center items-center gap-2">
                                                     <i className="ph ph-plus-circle text-xl"></i> เพิ่มคำถาม
                                                 </button>
                                             </div>
 
-                                            {/* Submit Actions */}
                                             <div className="flex gap-3 pt-6 border-t mt-6">
-                                                <button onClick={()=>setIsCreating(false)} className="w-1/3 py-4 bg-gray-100 rounded-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors">ยกเลิก</button>
-                                                <button onClick={handleCreateEvent} className="w-2/3 py-4 bg-[#C8102E] text-white rounded-xl font-bold shadow-md hover:bg-[#a10d25] transition-colors flex justify-center items-center gap-2">
+                                                <button onClick={()=>{setIsCreating(false); setIsEditing(false);}} className="w-1/3 py-4 bg-gray-100 rounded-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                                                <button onClick={handleSaveEvent} className="w-2/3 py-4 bg-[#C8102E] text-white rounded-xl font-bold shadow-md hover:bg-[#a10d25] flex justify-center items-center gap-2">
                                                     <i className="ph ph-floppy-disk text-lg"></i> บันทึกกิจกรรม
                                                 </button>
                                             </div>
@@ -698,7 +661,7 @@
                                     <div className="flex flex-col md:flex-row gap-3">
                                         <select value={selectedEventId} onChange={e=>setSelectedEventId(e.target.value)} className="p-3.5 border rounded-xl text-sm bg-white flex-1 outline-none focus:border-[#C8102E] shadow-sm font-bold appearance-none cursor-pointer">
                                             <option value="all">ดูรายชื่อผู้สมัครทุกกิจกรรม</option>
-                                            {events.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
+                                            {events?.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
                                         </select>
                                         <button onClick={exportCSV} className="bg-gray-800 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-sm hover:bg-black transition-colors flex items-center justify-center gap-2">
                                             <i className="ph ph-download-simple text-lg"></i> Export CSV
@@ -709,30 +672,40 @@
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-gray-50 border-b sticky top-0 shadow-sm"><tr className="text-gray-500"><th className="p-4 font-bold">ข้อมูลผู้สมัคร</th><th className="p-4 font-bold hidden md:table-cell">คำตอบอื่นๆ</th><th className="p-4 font-bold text-right">วันเวลาที่สมัคร</th></tr></thead>
                                             <tbody className="divide-y">
-                                                {applicants.filter(a => selectedEventId==='all' || a.eventId===selectedEventId).map(app => {
-                                                    const answersArr = Object.entries(app.answers);
+                                                {applicants?.filter(a => selectedEventId==='all' || a.eventId===selectedEventId).map(app => {
+                                                    const answersArr = Object.entries(app.answers || {});
                                                     return (
                                                     <tr key={app.id} className="hover:bg-gray-50">
                                                         <td className="p-4">
                                                             <span className="font-bold text-gray-800 block text-base">{answersArr[0]?.[1] || 'ไม่ระบุชื่อ'}</span>
-                                                            {selectedEventId === 'all' && <span className="text-[10px] bg-red-50 text-[#C8102E] px-2 py-0.5 rounded border border-red-100 mt-1 inline-block">{events.find(e=>e.id===app.eventId)?.title}</span>}
+                                                            {selectedEventId === 'all' && <span className="text-[10px] bg-red-50 text-[#C8102E] px-2 py-0.5 rounded border border-red-100 mt-1 inline-block">{events?.find(e=>e.id===app.eventId)?.title}</span>}
                                                         </td>
                                                         <td className="p-4 hidden md:table-cell text-gray-600 text-xs space-y-1">
                                                             {answersArr.slice(1).map(([k,v], idx) => {
                                                                 const isFile = typeof v === 'string' && v.startsWith('http');
-                                                                return (
-                                                                    <div key={idx}><span className="font-bold text-gray-500">{k}:</span> {isFile ? <a href={v} target="_blank" className="text-blue-500 hover:underline"><i className="ph ph-link"></i> ดูไฟล์แนบ</a> : Array.isArray(v) ? v.join(', ') : v}</div>
-                                                                );
+                                                                return <div key={idx}><span className="font-bold text-gray-500">{k}:</span> {isFile ? <a href={v} target="_blank" className="text-blue-500 hover:underline"><i className="ph ph-link"></i> ดูไฟล์แนบ</a> : Array.isArray(v) ? v.join(', ') : v}</div>
                                                             })}
                                                         </td>
-                                                        <td className="p-4 text-right">
-                                                            <span className="text-xs text-gray-500 font-medium block">{app.timestamp}</span>
-                                                        </td>
+                                                        <td className="p-4 text-right"><span className="text-xs text-gray-500 font-medium block">{app.timestamp}</span></td>
                                                     </tr>
                                                 )})}
-                                                {applicants.length === 0 && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
+                                                {(!applicants || applicants.length === 0) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SETTINGS TAB */}
+                            {activeTab === 'settings' && (
+                                <div className="max-w-2xl mx-auto animate-in fade-in space-y-6">
+                                    <div className="bg-white border rounded-3xl p-6 md:p-8 shadow-sm">
+                                        <h3 className="font-bold text-xl mb-6 text-gray-800 flex items-center gap-2"><i className="ph ph-lock-key text-[#C8102E]"></i> เปลี่ยนรหัสผ่านแอดมิน</h3>
+                                        <form onSubmit={handleChangePassword} className="space-y-4">
+                                            <div><label className="block text-sm font-bold text-gray-700 mb-1">รหัสผ่านเดิม</label><input type="password" value={passwords.oldPass} onChange={e=>setPasswords({...passwords, oldPass:e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none" required /></div>
+                                            <div><label className="block text-sm font-bold text-gray-700 mb-1">รหัสผ่านใหม่ (8 หลัก)</label><input type="password" value={passwords.newPass} onChange={e=>setPasswords({...passwords, newPass:e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none" maxLength="8" required /></div>
+                                            <button type="submit" className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-md hover:bg-black mt-4">อัปเดตรหัสผ่าน</button>
+                                        </form>
                                     </div>
                                 </div>
                             )}
@@ -756,7 +729,7 @@
             const showAlert = (message, type = 'info') => setAlertConfig({ isOpen: true, type, message });
 
             const fetchApi = async (payload = null) => {
-                if (!GOOGLE_SCRIPT_URL.startsWith('http')) return showAlert('กรุณาใส่ GOOGLE_SCRIPT_URL ก่อนใช้งาน', 'error');
+                if (!GOOGLE_SCRIPT_URL.startsWith('http')) { showAlert('กรุณาใส่ GOOGLE_SCRIPT_URL ก่อนใช้งาน', 'error'); return {status:'error'}; }
                 try {
                     const options = payload ? { method: 'POST', body: JSON.stringify(payload) } : { method: 'GET' };
                     const response = await fetch(payload ? GOOGLE_SCRIPT_URL : `${GOOGLE_SCRIPT_URL}?action=getData`, options);
@@ -764,8 +737,8 @@
                     
                     if (data.status === 'success') {
                         if (!payload) { setEvents(data.events || []); setApplicants(data.applicants || []); } 
-                        else { fetchApi(); }
-                    } else throw new Error(data.message);
+                        else { await fetchApi(); }
+                    } 
                     return data;
                 } catch (err) { console.error(err); showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล', 'error'); return { status: 'error' }; }
             };
@@ -796,6 +769,14 @@
                 if (res.status === 'success') navigateTo('success');
             };
 
+            const handleAdminLogin = async (e, pwd) => {
+                e.preventDefault();
+                showAlert('กำลังตรวจสอบรหัสผ่าน...', 'info');
+                const res = await fetchApi({ action: 'login', password: pwd });
+                if (res.status === 'success') { setAlertConfig({isOpen:false}); setIsAdminAuth(true); setCurrentView('admin-dashboard'); } 
+                else showAlert(res.message || 'รหัสผ่านไม่ถูกต้อง', 'error');
+            };
+
             return (
                 <div className="min-h-screen flex justify-center bg-gray-200 relative">
                     <div className={`bg-[#F3F4F6] min-h-screen flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 w-full`}>
@@ -805,11 +786,11 @@
                         {currentView === 'admin-login' ? (
                             <div className="absolute inset-0 bg-[#F3F4F6] flex items-center justify-center p-4 z-[100]">
                                 <div className="w-full max-w-sm bg-white p-8 rounded-3xl shadow-xl border text-center animate-in zoom-in-95">
-                                    <img src={HARDCODED_LOGO} className="w-16 h-16 rounded-full mx-auto mb-6 border shadow-sm object-cover" />
+                                    <img src={HARDCODED_LOGO} className="w-20 h-20 rounded-full mx-auto mb-6 border shadow-sm object-cover" />
                                     <h2 className="font-bold text-xl mb-2 text-gray-800">เข้าสู่ระบบผู้ดูแล</h2>
                                     <p className="text-sm text-gray-500 mb-8">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
                                     
-                                    <form onSubmit={(e) => { e.preventDefault(); if (e.target.pwd.value === '12345678') { setIsAdminAuth(true); setCurrentView('admin-dashboard'); } else { showAlert('รหัสผ่านไม่ถูกต้อง', 'error'); } }}>
+                                    <form onSubmit={(e) => handleAdminLogin(e, document.getElementById('pwdInput').value)}>
                                         <div className="relative h-14 flex items-center justify-center bg-gray-50 rounded-2xl border px-2 mb-6" onClick={() => document.getElementById('pwdInput')?.focus()}>
                                             <input id="pwdInput" name="pwd" type="password" maxLength={8} className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer" onChange={(e)=>{
                                                 const dots = document.querySelectorAll('.pwd-dot');
@@ -834,8 +815,8 @@
                                 <Header onAdminTrigger={() => setCurrentView('admin-login')} showBack={currentView === 'event-detail' || currentView === 'register'} onBack={() => currentView === 'register' ? navigateTo('event-detail', selectedEventSlug) : navigateTo('home')} />
                                 <main className="flex-1 relative pb-safe">
                                     {currentView === 'home' && <HomeView navigateTo={navigateTo} events={events} isLoading={isLoading} />}
-                                    {currentView === 'event-detail' && <EventDetailView event={events.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} getApplicantCount={(id)=>applicants.filter(a=>a.eventId===id).length} />}
-                                    {currentView === 'register' && <RegisterView event={events.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} onSubmit={handleRegisterSubmit} />}
+                                    {currentView === 'event-detail' && <EventDetailView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} getApplicantCount={(id)=>applicants?.filter(a=>a.eventId===id).length||0} />}
+                                    {currentView === 'register' && <RegisterView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} onSubmit={handleRegisterSubmit} />}
                                     {currentView === 'success' && <SuccessRegistrationView navigateTo={navigateTo} />}
                                 </main>
                             </>
