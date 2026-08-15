@@ -47,6 +47,10 @@
             { id: 'file', label: 'อัปโหลดไฟล์', icon: 'ph-upload-simple' }
         ];
 
+        const CATEGORY_OPTIONS = [
+            "ทั่วไป/อื่นๆ", "กีฬา", "วิชาการ", "ดนตรี/ศิลปะ", "จิตอาสา", "อบรม/ค่าย", "สภานักเรียน", "ไม่ระบุ (-)"
+        ];
+
         // --- SHARED COMPONENTS ---
         const Header = ({ onAdminTrigger, showBack, onBack }) => {
             const [logoClicks, setLogoClicks] = useState(0);
@@ -115,7 +119,7 @@
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
                         {events?.map(event => (
                             <div key={event.id} onClick={() => navigateTo('event-detail', event.slug)} className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col active:scale-[0.98] h-full">
-                                <div className="h-40 md:h-48 relative overflow-hidden bg-gray-100">
+                                <div className="h-40 md:h-48 shrink-0 relative overflow-hidden bg-gray-100">
                                     <img src={event.image || 'https://via.placeholder.com/400x300?text=No+Image'} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     <div className="absolute top-3 left-3">
                                         {event.status === 'open' ? (
@@ -126,11 +130,11 @@
                                     </div>
                                 </div>
                                 <div className="p-4 flex flex-col flex-1">
-                                    <div className="flex items-center gap-2 mb-1.5"><span className="text-[10px] font-bold text-[#C8102E] bg-red-50 px-2 py-0.5 rounded border border-red-100">{event.type}</span></div>
+                                    <div className="flex items-center gap-2 mb-1.5"><span className="text-[10px] font-bold text-[#C8102E] bg-red-50 px-2 py-0.5 rounded border border-red-100">{event.type === 'ไม่ระบุ (-)' ? 'กิจกรรม' : event.type || 'กิจกรรม'}</span></div>
                                     <h4 className="font-bold text-gray-800 text-base line-clamp-2 mb-2 group-hover:text-[#C8102E] transition-colors">{event.title}</h4>
                                     <div className="space-y-1.5 mt-auto">
-                                        <p className="text-xs text-gray-500 flex items-center gap-1.5"><i className="ph ph-calendar-blank text-[#C8102E]"></i> {event.date}</p>
-                                        <p className="text-xs text-gray-500 flex items-center gap-1.5"><i className="ph ph-map-pin text-[#C8102E]"></i> <span className="truncate">{event.location}</span></p>
+                                        <p className="text-xs text-gray-500 flex items-center gap-1.5"><i className="ph ph-calendar-blank text-[#C8102E]"></i> {event.date || '-'}</p>
+                                        <p className="text-xs text-gray-500 flex items-center gap-1.5"><i className="ph ph-map-pin text-[#C8102E]"></i> <span className="truncate">{event.location || '-'}</span></p>
                                     </div>
                                 </div>
                             </div>
@@ -148,20 +152,29 @@
             const shareUrl = `${GITHUB_PAGES_URL}?event=${event.slug}`;
             const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}&margin=10`;
             const currentCount = getApplicantCount(event.id);
-            const isFull = event.capacity && currentCount >= parseInt(event.capacity);
+            const isFull = event.capacity && parseInt(event.capacity) > 0 && currentCount >= parseInt(event.capacity);
 
             const handleShare = () => {
                 if (navigator.share) navigator.share({ title: event.title, text: `เชิญร่วมกิจกรรม: ${event.title}`, url: shareUrl }).catch(()=>{});
                 else { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }
             };
 
+            const formatDisplayDate = (dStr) => {
+                if (!dStr) return '-';
+                try {
+                    const d = new Date(dStr);
+                    if (isNaN(d.getTime())) return dStr;
+                    return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                } catch(e) { return dStr; }
+            }
+
             return (
                 <div className="pb-24 animate-in fade-in bg-white min-h-screen max-w-2xl mx-auto w-full relative">
-                    <div className="relative h-64 md:h-80 w-full bg-gray-900">
+                    <div className="relative h-64 md:h-80 w-full bg-gray-900 shrink-0">
                         <img src={event.image || 'https://via.placeholder.com/800x400'} alt={event.title} className="w-full h-full object-cover opacity-80" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                         <div className="absolute bottom-4 left-4 right-4 text-white">
-                            <span className="inline-block px-2.5 py-1 bg-[#C8102E] rounded-md text-[10px] font-bold mb-2">{event.type}</span>
+                            <span className="inline-block px-2.5 py-1 bg-[#C8102E] rounded-md text-[10px] font-bold mb-2">{event.type === 'ไม่ระบุ (-)' ? 'กิจกรรม' : event.type || 'กิจกรรม'}</span>
                             <h2 className="text-2xl font-bold leading-tight">{event.title}</h2>
                         </div>
                     </div>
@@ -175,18 +188,19 @@
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-calendar-blank text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">วันที่</p><p className="text-xs font-bold text-gray-800">{event.date}</p></div></div>
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-clock text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">เวลา</p><p className="text-xs font-bold text-gray-800">{event.time}</p></div></div>
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start col-span-2"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-map-pin text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">สถานที่</p><p className="text-xs font-bold text-gray-800">{event.location}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-calendar-blank text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">วันที่จัดกิจกรรม</p><p className="text-xs font-bold text-gray-800">{event.date || '-'}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-clock text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">เวลา</p><p className="text-xs font-bold text-gray-800">{event.time || '-'}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start col-span-2"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-map-pin text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">สถานที่</p><p className="text-xs font-bold text-gray-800">{event.location || '-'}</p></div></div>
                         </div>
 
                         <div className="mb-8">
                             <h3 className="font-bold text-lg mb-3 flex items-center gap-2"><i className="ph ph-info text-[#C8102E]"></i> รายละเอียดกิจกรรม</h3>
-                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{event.details}</p>
+                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{event.details || '-'}</p>
                         </div>
 
                         <div className="bg-gray-50 rounded-2xl p-4 border text-sm text-gray-600 mb-8 space-y-2">
-                            <div className="flex justify-between"><span className="font-medium text-gray-500">เปิดรับตั้งแต่:</span> <span className="font-bold text-gray-800">{event.openDate || '-'} ถึง {event.closeDate || '-'}</span></div>
+                            <div className="flex justify-between"><span className="font-medium text-gray-500">วันเปิดรับสมัคร:</span> <span className="font-bold text-gray-800">{formatDisplayDate(event.openDate)}</span></div>
+                            <div className="flex justify-between"><span className="font-medium text-gray-500">วันปิดรับสมัคร:</span> <span className="font-bold text-gray-800">{formatDisplayDate(event.closeDate)}</span></div>
                             <div className="flex justify-between"><span className="font-medium text-gray-500">รับจำนวนจำกัด:</span> <span className={`font-bold ${isFull ? 'text-red-500' : 'text-green-600'}`}>{currentCount}/{event.capacity || 'ไม่จำกัด'} คน</span></div>
                         </div>
                     </div>
@@ -208,7 +222,7 @@
             );
         };
 
-        const RegisterView = ({ event, navigateTo, onSubmit }) => {
+        const RegisterView = ({ event, navigateTo, onSubmit, setGlobalLoading }) => {
             const [formData, setFormData] = useState({});
             const [errors, setErrors] = useState({});
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -249,8 +263,10 @@
                 if (Object.keys(newErrors).length > 0) { setErrors(newErrors); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
 
                 setIsSubmitting(true);
+                setGlobalLoading(true); // เปิดเส้นโหลดด้านบน
                 await onSubmit({ eventId: event.id, answers: formData });
                 setIsSubmitting(false);
+                setGlobalLoading(false);
             };
 
             return (
@@ -347,7 +363,7 @@
         );
 
         // --- ADMIN VIEWS ---
-        const AdminDashboard = ({ setIsAdminAuth, events, applicants, showAlert, fetchApi }) => {
+        const AdminDashboard = ({ onLogout, events, applicants, showAlert, fetchApi, setGlobalLoading }) => {
             const [activeTab, setActiveTab] = useState('overview');
             const [selectedEventId, setSelectedEventId] = useState('all');
             
@@ -357,7 +373,7 @@
             // Password State
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
-            const defaultEvent = { title:'', type:'', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
+            const defaultEvent = { title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
             const [newEvent, setNewEvent] = useState(defaultEvent);
 
             const updateFieldType = (idx, type) => {
@@ -375,7 +391,7 @@
             const handleSaveEvent = async () => {
                 if(!newEvent.title || !newEvent.date) return showAlert('กรุณากรอกชื่อกิจกรรมและวันที่ให้ครบถ้วน', 'error');
                 
-                showAlert('กำลังบันทึกข้อมูล...', 'info');
+                setGlobalLoading(true);
                 let payload;
                 if (isEditing) {
                     payload = { action: 'updateEvent', event: newEvent };
@@ -386,6 +402,7 @@
                 }
                 
                 const res = await fetchApi(payload);
+                setGlobalLoading(false);
                 if (res.status === 'success') { showAlert('บันทึกสำเร็จ!', 'success'); setIsCreating(false); setIsEditing(false); setNewEvent(defaultEvent); }
             };
 
@@ -397,13 +414,16 @@
 
             const toggleStatus = async (eventId, currentStatus) => {
                 const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+                setGlobalLoading(true);
                 await fetchApi({ action: 'toggleEventStatus', eventId, status: newStatus });
+                setGlobalLoading(false);
             };
             
             const handleDeleteEvent = async (eventId) => {
                 if(confirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้? ข้อมูลจะไม่สามารถกู้คืนได้")) {
-                    showAlert('กำลังลบข้อมูล...', 'info');
+                    setGlobalLoading(true);
                     const res = await fetchApi({ action: 'deleteEvent', eventId });
+                    setGlobalLoading(false);
                     if(res.status === 'success') showAlert('ลบสำเร็จ', 'success');
                 }
             };
@@ -411,8 +431,9 @@
             const handleChangePassword = async (e) => {
                 e.preventDefault();
                 if(passwords.newPass.length < 8) return showAlert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัว', 'error');
-                showAlert('กำลังเปลี่ยนรหัสผ่าน...', 'info');
+                setGlobalLoading(true);
                 const res = await fetchApi({ action: 'changePassword', oldPassword: passwords.oldPass, newPassword: passwords.newPass });
+                setGlobalLoading(false);
                 if(res.status === 'success') { showAlert('เปลี่ยนรหัสผ่านสำเร็จ', 'success'); setPasswords({oldPass:'', newPass:''}); }
                 else showAlert(res.message || 'รหัสเดิมไม่ถูกต้อง', 'error');
             };
@@ -441,10 +462,10 @@
             };
 
             return (
-                <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-[100]">
+                <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-40">
                     <div className="w-64 bg-white border-r hidden md:flex flex-col shadow-sm">
                         <div className="p-5 border-b bg-red-50 flex items-center gap-3">
-                            <img src={HARDCODED_LOGO} className="w-10 h-10 rounded-full border border-red-200" />
+                            <img src={HARDCODED_LOGO} className="w-10 h-10 rounded-full border border-red-200 shrink-0" />
                             <div><h2 className="font-bold text-[#C8102E] leading-tight">Admin</h2><p className="text-[10px] text-gray-500 font-bold">EVENT SYSTEM</p></div>
                         </div>
                         <div className="p-3 space-y-1">
@@ -454,14 +475,14 @@
                             <button onClick={()=>setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='settings'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-gear text-lg"></i> ตั้งค่า</button>
                         </div>
                         <div className="mt-auto p-4 border-t">
-                            <button onClick={()=>setIsAdminAuth(false)} className="w-full flex justify-center items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-colors"><i className="ph ph-sign-out text-lg"></i> ออกระบบ</button>
+                            <button onClick={onLogout} className="w-full flex justify-center items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-colors"><i className="ph ph-sign-out text-lg"></i> ออกระบบ</button>
                         </div>
                     </div>
 
                     <div className="flex-1 flex flex-col h-full overflow-hidden">
                         <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm md:hidden">
-                            <div className="font-bold text-[#C8102E] flex items-center gap-2"><img src={HARDCODED_LOGO} className="w-8 h-8 rounded-full border" /> Admin Panel</div>
-                            <button onClick={()=>setIsAdminAuth(false)} className="bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700">ออกระบบ</button>
+                            <div className="font-bold text-[#C8102E] flex items-center gap-2"><img src={HARDCODED_LOGO} className="w-8 h-8 rounded-full border shrink-0" /> Admin Panel</div>
+                            <button onClick={onLogout} className="bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700">ออกระบบ</button>
                         </div>
                         
                         <div className="bg-white border-b px-2 flex md:hidden overflow-x-auto hide-scrollbar z-10">
@@ -492,7 +513,7 @@
                                                 <p className="text-sm text-gray-500 font-bold mb-1 text-[#C8102E]">ยอดผู้สมัครรวมทั้งหมด</p>
                                                 <p className="font-bold text-4xl text-[#C8102E]">{applicants?.length || 0}</p>
                                             </div>
-                                            <div className="w-14 h-14 bg-red-50 text-[#C8102E] rounded-full flex items-center justify-center"><i className="ph ph-users text-3xl"></i></div>
+                                            <div className="w-14 h-14 bg-red-50 text-[#C8102E] rounded-full flex items-center justify-center shrink-0"><i className="ph ph-users text-3xl"></i></div>
                                         </div>
                                     </div>
 
@@ -530,7 +551,7 @@
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                                 {events?.map(e => (
                                                     <div key={e.id} className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col group">
-                                                        <div className="h-32 bg-gray-200 relative">
+                                                        <div className="h-32 bg-gray-200 relative shrink-0">
                                                             <img src={e.image || 'https://via.placeholder.com/400x200'} className="w-full h-full object-cover" />
                                                             <span className={`absolute top-3 right-3 px-2 py-1 rounded-md text-[10px] font-bold text-white shadow-sm ${e.status==='open'?'bg-green-500':'bg-gray-700'}`}>{e.status==='open'?'เปิดรับ':'ปิดรับ'}</span>
                                                         </div>
@@ -565,11 +586,23 @@
                                                 <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">1. ข้อมูลกิจกรรม</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">ชื่อกิจกรรม <span className="text-red-500">*</span></label><input type="text" value={newEvent.title} onChange={e=>setNewEvent({...newEvent, title: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">ประเภทกิจกรรม</label><input type="text" value={newEvent.type} placeholder="เช่น กีฬา, วิชาการ" onChange={e=>setNewEvent({...newEvent, type: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    
+                                                    <div>
+                                                        <label className="text-sm font-bold text-gray-700 mb-1 block">หมวดหมู่กิจกรรม</label>
+                                                        <select value={newEvent.type} onChange={e=>setNewEvent({...newEvent, type: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50 appearance-none cursor-pointer">
+                                                            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        </select>
+                                                    </div>
+
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">รับจำนวนจำกัด (คน)</label><input type="number" value={newEvent.capacity} placeholder="เว้นว่างถ้าไม่จำกัด" onChange={e=>setNewEvent({...newEvent, capacity: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                     <div className="md:col-span-2"><label className="text-sm font-bold text-gray-700 mb-1 block">รายละเอียด</label><textarea rows="3" value={newEvent.details} onChange={e=>setNewEvent({...newEvent, details: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50"></textarea></div>
+                                                    
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันที่จัดกิจกรรม <span className="text-red-500">*</span></label><input type="text" value={newEvent.date} placeholder="เช่น 12 ต.ค. 66" onChange={e=>setNewEvent({...newEvent, date: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">เวลา</label><input type="text" value={newEvent.time} placeholder="เช่น 09:00 - 12:00" onChange={e=>setNewEvent({...newEvent, time: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันเปิดรับสมัคร (เริ่ม)</label><input type="date" value={newEvent.openDate} onChange={e=>setNewEvent({...newEvent, openDate: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50 cursor-pointer" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันปิดรับสมัคร (สิ้นสุด)</label><input type="date" value={newEvent.closeDate} onChange={e=>setNewEvent({...newEvent, closeDate: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50 cursor-pointer" /></div>
+                                                    
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">สถานที่</label><input type="text" value={newEvent.location} onChange={e=>setNewEvent({...newEvent, location: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label><input type="text" value={newEvent.image} placeholder="ใส่ลิงก์รูปภาพ (https://...)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                 </div>
@@ -594,7 +627,6 @@
                                                                 </div>
                                                             </div>
 
-                                                            {/* ส่วนสำหรับคำอธิบายเพิ่มเติม */}
                                                             <input 
                                                                 type="text" 
                                                                 placeholder="คำอธิบายเพิ่มเติม (ไม่บังคับ) เช่น ระบุไซส์เสื้อ, ไม่ต้องใส่คำนำหน้า" 
@@ -646,7 +678,7 @@
 
                                             <div className="flex gap-3 pt-6 border-t mt-6">
                                                 <button onClick={()=>{setIsCreating(false); setIsEditing(false);}} className="w-1/3 py-4 bg-gray-100 rounded-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors">ยกเลิก</button>
-                                                <button onClick={handleSaveEvent} className="w-2/3 py-4 bg-[#C8102E] text-white rounded-xl font-bold shadow-md hover:bg-[#a10d25] flex justify-center items-center gap-2">
+                                                <button onClick={handleSaveEvent} className="w-2/3 py-4 bg-[#C8102E] text-white rounded-xl font-bold shadow-md hover:bg-[#a10d25] flex justify-center items-center gap-2 transition-colors">
                                                     <i className="ph ph-floppy-disk text-lg"></i> บันทึกกิจกรรม
                                                 </button>
                                             </div>
@@ -704,7 +736,7 @@
                                         <form onSubmit={handleChangePassword} className="space-y-4">
                                             <div><label className="block text-sm font-bold text-gray-700 mb-1">รหัสผ่านเดิม</label><input type="password" value={passwords.oldPass} onChange={e=>setPasswords({...passwords, oldPass:e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none" required /></div>
                                             <div><label className="block text-sm font-bold text-gray-700 mb-1">รหัสผ่านใหม่ (8 หลัก)</label><input type="password" value={passwords.newPass} onChange={e=>setPasswords({...passwords, newPass:e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none" maxLength="8" required /></div>
-                                            <button type="submit" className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-md hover:bg-black mt-4">อัปเดตรหัสผ่าน</button>
+                                            <button type="submit" className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-md hover:bg-black mt-4 transition-colors">อัปเดตรหัสผ่าน</button>
                                         </form>
                                     </div>
                                 </div>
@@ -723,6 +755,8 @@
             const [alertConfig, setAlertConfig] = useState({ isOpen: false, type: 'info', message: '' });
             
             const [isLoading, setIsLoading] = useState(true);
+            const [isGlobalLoading, setGlobalLoading] = useState(false); // ควบคุมแถบโหลดด้านบน
+            
             const [events, setEvents] = useState([]);
             const [applicants, setApplicants] = useState([]);
 
@@ -760,19 +794,20 @@
                 else { setSelectedEventSlug(null); window.history.pushState({}, '', window.location.pathname); }
             };
 
-            const handleRegisterSubmit = async (data) => {
-                const now = new Date();
-                const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                const eventTitle = events.find(e => e.id === data.eventId)?.title || '';
-
-                const res = await fetchApi({ action: 'register', applicant: { id: `REG-${Date.now()}`, eventId: data.eventId, eventTitle: eventTitle, timestamp: formattedDate, answers: data.answers } });
-                if (res.status === 'success') navigateTo('success');
+            const handleLogout = () => {
+                setGlobalLoading(true);
+                setTimeout(() => {
+                    setIsAdminAuth(false);
+                    setCurrentView('home');
+                    setGlobalLoading(false);
+                }, 500);
             };
 
             const handleAdminLogin = async (e, pwd) => {
                 e.preventDefault();
-                showAlert('กำลังตรวจสอบรหัสผ่าน...', 'info');
+                setGlobalLoading(true);
                 const res = await fetchApi({ action: 'login', password: pwd });
+                setGlobalLoading(false);
                 if (res.status === 'success') { setAlertConfig({isOpen:false}); setIsAdminAuth(true); setCurrentView('admin-dashboard'); } 
                 else showAlert(res.message || 'รหัสผ่านไม่ถูกต้อง', 'error');
             };
@@ -780,7 +815,9 @@
             return (
                 <div className="min-h-screen flex justify-center bg-gray-200 relative">
                     <div className={`bg-[#F3F4F6] min-h-screen flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 w-full`}>
-                        {isLoading && <div className="absolute top-0 left-0 w-full h-1 bg-gray-200 z-50"><div className="w-1/2 h-full bg-[#C8102E] animate-[slide_1.5s_ease-in-out_infinite]"></div></div>}
+                        {/* แถบโหลดสีแดงด้านบน ทำงานทั้งตอนโหลดแอปครั้งแรก และตอนกำลังเซฟข้อมูล */}
+                        {(isLoading || isGlobalLoading) && <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-200 z-[300] overflow-hidden"><div className="w-1/2 h-full bg-[#C8102E] animate-[slide_1.5s_ease-in-out_infinite] rounded-full"></div></div>}
+                        
                         <CustomAlert config={alertConfig} onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })} />
 
                         {currentView === 'admin-login' ? (
@@ -792,7 +829,7 @@
                                     
                                     <form onSubmit={(e) => handleAdminLogin(e, document.getElementById('pwdInput').value)}>
                                         <div className="relative h-14 flex items-center justify-center bg-gray-50 rounded-2xl border px-2 mb-6" onClick={() => document.getElementById('pwdInput')?.focus()}>
-                                            <input id="pwdInput" name="pwd" type="password" maxLength={8} className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer" onChange={(e)=>{
+                                            <input id="pwdInput" name="pwd" type="password" maxLength={8} disabled={isGlobalLoading} className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer disabled:cursor-not-allowed" onChange={(e)=>{
                                                 const dots = document.querySelectorAll('.pwd-dot');
                                                 dots.forEach((dot, i) => {
                                                     if(i < e.target.value.length) dot.classList.replace('bg-gray-300', 'bg-[#C8102E]');
@@ -803,20 +840,22 @@
                                                 {[...Array(8)].map((_, i) => <div key={i} className="pwd-dot w-3.5 h-3.5 rounded-full bg-gray-300 transition-colors duration-200"></div>)}
                                             </div>
                                         </div>
-                                        <button type="submit" className="w-full bg-[#C8102E] text-white p-3.5 rounded-xl font-bold shadow-md hover:bg-[#a10d25] transition-colors">เข้าสู่ระบบ</button>
+                                        <button type="submit" disabled={isGlobalLoading} className="w-full bg-[#C8102E] text-white p-3.5 rounded-xl font-bold shadow-md hover:bg-[#a10d25] transition-colors disabled:bg-gray-400">
+                                            {isGlobalLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+                                        </button>
                                         <button type="button" onClick={()=>setCurrentView('home')} className="mt-4 text-sm font-medium text-gray-500 hover:text-gray-700">กลับหน้าหลัก</button>
                                     </form>
                                 </div>
                             </div>
                         ) : isAdminAuth ? (
-                            <AdminDashboard setIsAdminAuth={setIsAdminAuth} events={events} applicants={applicants} showAlert={showAlert} fetchApi={fetchApi} />
+                            <AdminDashboard onLogout={handleLogout} events={events} applicants={applicants} showAlert={showAlert} fetchApi={fetchApi} setGlobalLoading={setGlobalLoading} />
                         ) : (
                             <>
                                 <Header onAdminTrigger={() => setCurrentView('admin-login')} showBack={currentView === 'event-detail' || currentView === 'register'} onBack={() => currentView === 'register' ? navigateTo('event-detail', selectedEventSlug) : navigateTo('home')} />
                                 <main className="flex-1 relative pb-safe">
                                     {currentView === 'home' && <HomeView navigateTo={navigateTo} events={events} isLoading={isLoading} />}
                                     {currentView === 'event-detail' && <EventDetailView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} getApplicantCount={(id)=>applicants?.filter(a=>a.eventId===id).length||0} />}
-                                    {currentView === 'register' && <RegisterView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} onSubmit={handleRegisterSubmit} />}
+                                    {currentView === 'register' && <RegisterView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} onSubmit={handleRegisterSubmit} setGlobalLoading={setGlobalLoading} />}
                                     {currentView === 'success' && <SuccessRegistrationView navigateTo={navigateTo} />}
                                 </main>
                             </>
