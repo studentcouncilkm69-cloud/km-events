@@ -145,7 +145,7 @@
                         <p className="text-sm text-gray-500 mb-8 leading-relaxed">{config.message}</p>
                         <div className="flex gap-3">
                             <button onClick={onCancel} className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors text-sm">ยกเลิก</button>
-                            <button onClick={onConfirm} className="flex-1 py-4 bg-[#C8102E] hover:bg-[#a10d25] text-white font-bold rounded-2xl transition-colors shadow-md text-sm">ยืนยันลบ</button>
+                            <button onClick={onConfirm} className="flex-1 py-4 bg-[#C8102E] hover:bg-[#a10d25] text-white font-bold rounded-2xl transition-colors shadow-md text-sm">ยืนยัน</button>
                         </div>
                     </div>
                 </div>
@@ -647,8 +647,10 @@
                     payload = { action: 'updateEvent', event: newEvent };
                 } else {
                     const eventId = `EVT-${Math.floor(Math.random() * 10000)}`;
-                    const slug = newEvent.title.toLowerCase().replace(/[^a-z0-9ก-๙]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random()*100);
-                    payload = { action: 'createEvent', event: { ...newEvent, id: eventId, slug, status: 'open' } };
+                    // ⚠️ เปลี่ยนวิธีสร้าง Slug ให้เป็นแบบสุ่มภาษาอังกฤษตัวเล็ก 6 หลัก ป้องกันภาษาไทยยาวเหยียด
+                    const slug = Math.random().toString(36).substring(2, 8);
+                    
+                    payload = { action: 'createEvent', event: { ...newEvent, id: eventId, slug: slug, status: 'open' } };
                 }
                 
                 const res = await fetchApi(payload);
@@ -1252,7 +1254,6 @@
                 const init = async () => {
                     await fetchApi();
                     setIsLoading(false);
-                    // ⚠️ แก้บักตรงนี้: เติมคำว่า URL ให้สมบูรณ์
                     const slug = new URLSearchParams(window.location.search).get('event');
                     if (slug) { setSelectedEventSlug(slug); setCurrentView('event-detail'); }
                 };
