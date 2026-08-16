@@ -115,7 +115,6 @@
             );
         };
 
-        // 🎨 ปรับปรุงดีไซน์ CustomAlert
         const CustomAlert = ({ config, onClose }) => {
             if (!config?.isOpen) return null;
             const isError = config.type === 'error';
@@ -134,7 +133,6 @@
             );
         };
 
-        // 🎨 ปรับปรุงดีไซน์ ConfirmDialog
         const ConfirmDialog = ({ config, onCancel, onConfirm }) => {
             if (!config?.isOpen) return null;
             return (
@@ -154,6 +152,7 @@
             );
         };
 
+        // --- PUBLIC VIEWS ---
         const HomeView = ({ navigateTo, events, isLoading }) => {
             const [searchQuery, setSearchQuery] = useState('');
             const safeEvents = Array.isArray(events) ? events : [];
@@ -580,7 +579,6 @@
             const [isEditing, setIsEditing] = useState(false);
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
-            // ⚠️ เมนูด้านข้าง เปิด/ปิด
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
             const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
@@ -705,7 +703,6 @@
                 });
             };
 
-            // ⚠️ ฟังก์ชันลบผู้สมัครรายบุคคล
             const handleDeleteApplicant = (appId) => {
                 setConfirmDialog({
                     isOpen: true,
@@ -731,7 +728,6 @@
                 else showAlert(res.message || 'รหัสเดิมไม่ถูกต้อง', 'error');
             };
 
-            // ⚠️ แก้ไขระบบดาวน์โหลด CSV ให้รองรับภาษาไทย 100%
             const exportCSV = () => {
                 const safeApplicants = Array.isArray(applicants) ? applicants : [];
                 const filtered = safeApplicants.filter(a => selectedEventId === 'all' || a.eventId === selectedEventId);
@@ -783,12 +779,10 @@
                 <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-40 overflow-hidden">
                     <ConfirmDialog config={confirmDialog} onCancel={() => setConfirmDialog({ isOpen: false })} onConfirm={confirmDialog.onConfirm} />
                     
-                    {/* ⚠️ Sidebar Overlay (มือถือ) */}
                     {isSidebarOpen && (
                         <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)}></div>
                     )}
 
-                    {/* ⚠️ Sidebar */}
                     <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r flex flex-col shadow-xl md:shadow-none transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                         <div className="p-5 border-b bg-red-50 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -809,7 +803,6 @@
                     </div>
 
                     <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
-                        {/* ⚠️ Mobile Header */}
                         <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm md:hidden shrink-0">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setIsSidebarOpen(true)} className="text-gray-600 hover:text-[#C8102E]"><i className="ph ph-list text-2xl"></i></button>
@@ -1159,7 +1152,7 @@
                                 </div>
                             )}
 
-                            {/* ⚠️ APPLICANTS TAB (เพิ่มปุ่มลบรายชื่อ) */}
+                            {/* APPLICANTS TAB */}
                             {activeTab === 'applicants' && (
                                 <div className="max-w-5xl mx-auto space-y-4 flex flex-col h-full animate-in fade-in">
                                     <div className="flex flex-col md:flex-row gap-3">
@@ -1191,7 +1184,6 @@
                                                                 return <div key={idx}><span className="font-bold text-gray-500">{k}:</span> {isFile ? <a href={v} target="_blank" className="text-blue-500 hover:underline"><i className="ph ph-link"></i> ดูไฟล์แนบ</a> : Array.isArray(v) ? v.join(', ') : v}</div>
                                                             })}
                                                         </td>
-                                                        {/* ⚠️ ปุ่มลบผู้สมัครรายบุคคล */}
                                                         <td className="p-4 text-center align-top">
                                                             <button onClick={() => handleDeleteApplicant(app.id)} className="w-10 h-10 rounded-full bg-white border shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center justify-center mx-auto" title="ลบข้อมูลนี้">
                                                                 <i className="ph ph-trash text-lg"></i>
@@ -1260,7 +1252,8 @@
                 const init = async () => {
                     await fetchApi();
                     setIsLoading(false);
-                    const slug = newSearchParams(window.location.search).get('event');
+                    // ⚠️ แก้บักตรงนี้: เติมคำว่า URL ให้สมบูรณ์
+                    const slug = new URLSearchParams(window.location.search).get('event');
                     if (slug) { setSelectedEventSlug(slug); setCurrentView('event-detail'); }
                 };
                 init();
