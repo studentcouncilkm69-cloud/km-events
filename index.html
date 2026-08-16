@@ -28,6 +28,41 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
+        // ⚠️ ระบบป้องกันจอขาว (Error Boundary)
+        // ==========================================
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null, errorInfo: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            componentDidCatch(error, errorInfo) {
+                this.setState({ errorInfo });
+                console.error("App Crashed:", error, errorInfo);
+            }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="p-8 text-center bg-red-50 min-h-screen text-gray-800 flex flex-col items-center justify-center">
+                            <i className="ph ph-warning-octagon text-6xl text-red-500 mb-4"></i>
+                            <h2 className="text-2xl font-bold mb-2 text-red-600">ระบบขัดข้องชั่วคราว</h2>
+                            <p className="mb-6 text-gray-600">ฟอร์มมีปัญหา กรุณาแคปหน้าจอนี้ส่งให้แอดมินดูครับ</p>
+                            <div className="bg-white p-4 rounded-xl border border-red-200 text-left text-xs text-red-500 font-mono overflow-auto max-h-64 shadow-inner w-full max-w-2xl">
+                                <p className="font-bold mb-2">{this.state.error && this.state.error.toString()}</p>
+                            </div>
+                            <button onClick={() => window.location.reload()} className="mt-8 px-6 py-3 bg-[#C8102E] text-white font-bold rounded-xl shadow-md hover:bg-black transition-colors">
+                                โหลดหน้าเว็บใหม่
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        // ==========================================
         // ⚠️ การตั้งค่าระบบ
         // ==========================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfq999r-lWQcNZmYZWeUxiWNmNOo5q1MQwU5E7CQruSsBliCPMOueVOoRnw5ElbkFOfQ/exec";
@@ -260,7 +295,6 @@
 
             if (!event) return <div className="p-8 text-center text-gray-500">ไม่พบฟอร์มสำหรับกิจกรรมนี้</div>;
 
-            // 🛡️ ป้องกันจอขาวระดับสูงสุด: แปลงข้อมูลแบบ 10 ชั้น 
             let safeFormFields = [];
             try {
                 if (Array.isArray(event.formFields)) {
@@ -273,11 +307,10 @@
                     }
                 }
             } catch(e) {
-                console.error("Parse Error! ข้อมูลใน Sheet อาจจะพัง:", e);
+                console.error("Parse Error!", e);
                 safeFormFields = [];
             }
 
-            // ถ้าทุกอย่างพังหมด ให้สร้างคำถามสำรองให้เลย 1 ข้อ กันหน้าขาว
             if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
                 safeFormFields = [{ id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true }];
             }
@@ -316,7 +349,7 @@
                         }
                     }
                 });
-                if (Object.keys(newErrors).length > 0) { setErrors(newErrors); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                if (Object.keys(newErrors).length > 0) { setErrors(newErrors); window.scrollTo(0, 0); return; }
 
                 setIsSubmitting(true);
                 setGlobalLoading(true); 
@@ -339,7 +372,7 @@
                             const options = Array.isArray(field.options) ? field.options : [];
                             
                             return (
-                                <div key={idx} className={`bg-[#F9FAFB] p-5 md:p-6 rounded-2xl border transition-all ${errors[field.label] ? 'border-red-400 bg-red-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
+                                <div key={idx} className={`bg-[#F9FAFB] p-5 md:p-6 rounded-2xl border transition-all ${errors[field.label] ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
                                     <div className="mb-3">
                                         <label className="block font-bold text-gray-800 text-sm md:text-base">
                                             {field.label} {field.required && <span className="text-[#C8102E] text-lg leading-none">*</span>}
@@ -370,15 +403,17 @@
                                     )}
                                     {field.type === 'date' && <input type="date" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
                                     {field.type === 'time' && <input type="time" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
+                                    
                                     {field.type === 'scale' && (() => {
                                         const min = parseInt(field.scaleMin) || 1;
                                         const max = parseInt(field.scaleMax) || 5;
-                                        const length = Math.max(0, max - min + 1);
+                                        const items = [];
+                                        for(let n = min; n <= max; n++) items.push(n);
                                         return (
                                             <div className="bg-white p-4 rounded-xl border shadow-sm">
                                                 <div className="flex justify-between text-xs text-gray-500 mb-3 font-bold px-2"><span>{field.scaleMinLabel || 'น้อย'}</span><span>{field.scaleMaxLabel || 'มาก'}</span></div>
                                                 <div className="flex justify-between items-center px-2">
-                                                    {Array.from({length}, (_, i) => min + i).map(num => (
+                                                    {items.map(num => (
                                                         <label key={num} className="flex flex-col items-center gap-2 cursor-pointer">
                                                             <input type="radio" name={field.label} value={num} checked={String(formData[field.label]) === String(num)} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-5 h-5 accent-[#C8102E] cursor-pointer" />
                                                             <span className="text-sm font-bold text-gray-600">{num}</span>
@@ -388,6 +423,7 @@
                                             </div>
                                         );
                                     })()}
+                                    
                                     {field.type === 'file' && (
                                         <div>
                                             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
@@ -877,7 +913,7 @@
             }, []);
 
             const navigateTo = (view, slug = null) => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo(0, 0);
                 setCurrentView(view);
                 if (slug) { setSelectedEventSlug(slug); window.history.pushState({}, '', `?event=${slug}`); } 
                 else { setSelectedEventSlug(null); window.history.pushState({}, '', window.location.pathname); }
@@ -960,7 +996,7 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
