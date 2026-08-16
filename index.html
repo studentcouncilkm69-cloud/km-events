@@ -29,9 +29,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // ==========================================
-        // ⚠️ ระบบป้องกันจอขาว (Error Boundary)
-        // ==========================================
         class ErrorBoundary extends React.Component {
             constructor(props) { super(props); this.state = { hasError: false, error: null }; }
             static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -51,9 +48,6 @@
             }
         }
 
-        // ==========================================
-        // ⚠️ การตั้งค่าระบบ
-        // ==========================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfq999r-lWQcNZmYZWeUxiWNmNOo5q1MQwU5E7CQruSsBliCPMOueVOoRnw5ElbkFOfQ/exec";
         const GITHUB_PAGES_URL = window.location.origin + window.location.pathname; 
         const HARDCODED_LOGO = "https://i.postimg.cc/wBN5btrp/rong-re-yn-kham-wng.png";
@@ -94,7 +88,6 @@
             reader.readAsDataURL(file);
         };
 
-        // --- SHARED COMPONENTS ---
         const Header = ({ onAdminTrigger, showBack, onBack }) => {
             const [logoClicks, setLogoClicks] = useState(0);
             const clickTimeoutRef = useRef(null);
@@ -122,45 +115,45 @@
             );
         };
 
+        // 🎨 ปรับปรุงดีไซน์ CustomAlert
         const CustomAlert = ({ config, onClose }) => {
             if (!config?.isOpen) return null;
             const isError = config.type === 'error';
             const isSuccess = config.type === 'success';
             return (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-in fade-in">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center animate-in zoom-in-95">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isError ? 'bg-red-50 text-red-600' : isSuccess ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
-                            <i className={`ph text-4xl ${isError ? 'ph-x-circle' : isSuccess ? 'ph-check-circle' : 'ph-info'}`}></i>
+                <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 modal-overlay animate-in fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in-95 border border-gray-100">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner ${isError ? 'bg-red-50 text-[#C8102E]' : isSuccess ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                            <i className={`ph text-5xl ph-fill ${isError ? 'ph-warning-circle' : isSuccess ? 'ph-check-circle' : 'ph-info'}`}></i>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">{isError ? 'เกิดข้อผิดพลาด' : isSuccess ? 'สำเร็จ' : 'แจ้งเตือน'}</h3>
-                        <p className="text-sm text-gray-500 mb-6">{config.message}</p>
-                        <button onClick={onClose} className="w-full py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-colors shadow-md">ตกลง</button>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">{isError ? 'เกิดข้อผิดพลาด' : isSuccess ? 'สำเร็จเรียบร้อย' : 'แจ้งเตือน'}</h3>
+                        <p className="text-sm text-gray-500 mb-8 leading-relaxed">{config.message}</p>
+                        <button onClick={onClose} className="w-full py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl transition-colors shadow-md text-sm">ตกลง</button>
                     </div>
                 </div>
             );
         };
 
-        // คอมโพเนนต์ยืนยันการทำรายการแบบ Custom (แทน window.confirm)
-        const ConfirmDialog = ({ config, onConfirm, onCancel }) => {
+        // 🎨 ปรับปรุงดีไซน์ ConfirmDialog
+        const ConfirmDialog = ({ config, onCancel, onConfirm }) => {
             if (!config?.isOpen) return null;
             return (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-in fade-in">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center animate-in zoom-in-95">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-orange-50 text-orange-500">
-                            <i className="ph ph-warning text-4xl"></i>
+                <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 modal-overlay animate-in fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in-95 border border-gray-100">
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-orange-50 text-orange-500 shadow-inner">
+                            <i className="ph ph-warning text-5xl ph-fill"></i>
                         </div>
                         <h3 className="text-xl font-bold text-gray-800 mb-2">{config.title || 'ยืนยันการทำรายการ'}</h3>
-                        <p className="text-sm text-gray-500 mb-6">{config.message}</p>
+                        <p className="text-sm text-gray-500 mb-8 leading-relaxed">{config.message}</p>
                         <div className="flex gap-3">
-                            <button onClick={onCancel} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">ยกเลิก</button>
-                            <button onClick={onConfirm} className="flex-1 py-3 bg-[#C8102E] hover:bg-[#a10d25] text-white font-bold rounded-xl transition-colors shadow-md">ยืนยัน</button>
+                            <button onClick={onCancel} className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors text-sm">ยกเลิก</button>
+                            <button onClick={onConfirm} className="flex-1 py-4 bg-[#C8102E] hover:bg-[#a10d25] text-white font-bold rounded-2xl transition-colors shadow-md text-sm">ยืนยันลบ</button>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- PUBLIC VIEWS ---
         const HomeView = ({ navigateTo, events, isLoading }) => {
             const [searchQuery, setSearchQuery] = useState('');
             const safeEvents = Array.isArray(events) ? events : [];
@@ -328,7 +321,6 @@
 
             if (parsedFields.length === 0) parsedFields = [{ id: 1, label: 'ชื่อ-นามสกุล', type: 'text', required: true }];
 
-            // ดึงหัวข้อเริ่มต้นจากข้อมูลที่แอดมินตั้งไว้
             const introTitle = event.formIntroTitle || 'ข้อมูลการสมัคร';
             const introDesc = event.formIntroDesc !== undefined ? event.formIntroDesc : 'โปรดกรอกข้อมูลตามความเป็นจริงให้ครบถ้วน';
 
@@ -407,7 +399,11 @@
                     
                     {/* 🖼️ แบนเนอร์กิจกรรมบนหัวฟอร์ม */}
                     <div className="relative h-48 sm:h-56 w-full bg-gray-900 shrink-0 shadow-sm rounded-b-3xl overflow-hidden mb-6">
-                        <img src={event.image || 'https://via.placeholder.com/800x400'} alt={event.title} className="w-full h-full object-cover opacity-70" />
+                        {event.image ? (
+                            <img src={event.image} alt={event.title} className="w-full h-full object-cover opacity-70" />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-red-800 to-[#C8102E] opacity-90"></div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                         <div className="absolute bottom-4 left-4 right-4 text-white">
                             <span className="inline-block px-2 py-0.5 bg-[#C8102E] rounded text-[10px] font-bold mb-1 shadow-sm">{event.type === 'ไม่ระบุ (-)' ? 'กิจกรรม' : event.type || 'กิจกรรม'}</span>
@@ -584,7 +580,9 @@
             const [isEditing, setIsEditing] = useState(false);
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
-            // State สำหรับ Custom Modal
+            // ⚠️ เมนูด้านข้าง เปิด/ปิด
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
             const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
             
             const defaultEvent = { 
@@ -692,7 +690,6 @@
                 setGlobalLoading(false);
             };
             
-            // ⚠️ เปลี่ยนมาใช้ Custom Modal แทน confirm()
             const handleDeleteEvent = (eventId) => {
                 setConfirmDialog({
                     isOpen: true,
@@ -708,6 +705,22 @@
                 });
             };
 
+            // ⚠️ ฟังก์ชันลบผู้สมัครรายบุคคล
+            const handleDeleteApplicant = (appId) => {
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'ลบรายชื่อผู้สมัคร',
+                    message: 'คุณแน่ใจหรือไม่ที่จะลบรายชื่อนี้? ข้อมูลจะไม่สามารถกู้คืนได้',
+                    onConfirm: async () => {
+                        setConfirmDialog({ isOpen: false });
+                        setGlobalLoading(true);
+                        const res = await fetchApi({ action: 'deleteApplicant', appId: appId });
+                        setGlobalLoading(false);
+                        if(res.status === 'success') showAlert('ลบรายชื่อเรียบร้อยแล้ว', 'success');
+                    }
+                });
+            };
+
             const handleChangePassword = async (e) => {
                 e.preventDefault();
                 if(passwords.newPass.length < 8) return showAlert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัว', 'error');
@@ -718,6 +731,7 @@
                 else showAlert(res.message || 'รหัสเดิมไม่ถูกต้อง', 'error');
             };
 
+            // ⚠️ แก้ไขระบบดาวน์โหลด CSV ให้รองรับภาษาไทย 100%
             const exportCSV = () => {
                 const safeApplicants = Array.isArray(applicants) ? applicants : [];
                 const filtered = safeApplicants.filter(a => selectedEventId === 'all' || a.eventId === selectedEventId);
@@ -727,33 +741,37 @@
                 filtered.forEach(a => Object.keys(a.answers || {}).forEach(k => headers.add(k)));
                 headers = Array.from(headers);
 
-                let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n"; 
+                let csvContent = "\uFEFF" + headers.map(h => `"${h}"`).join(",") + "\n"; 
                 filtered.forEach(a => {
                     const evtTitle = events?.find(e=>e.id === a.eventId)?.title || '';
-                    let row = [a.timestamp, `"${evtTitle}"`];
+                    let row = [`"${a.timestamp}"`, `"${evtTitle}"`];
                     headers.slice(2).forEach(h => {
                         let val = (a.answers && a.answers[h]) ? a.answers[h] : "";
                         if (Array.isArray(val)) val = val.join(" / ");
-                        if (typeof val === 'string' && val.startsWith('http')) val = `"${val}"`; 
                         row.push(`"${String(val).replace(/"/g, '""')}"`);
                     });
                     csvContent += row.join(",") + "\n";
                 });
-                const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `Applicants_${selectedEventId}_${Date.now()}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a"); 
+                link.setAttribute("href", url); 
+                link.setAttribute("download", `Applicants_${selectedEventId}_${Date.now()}.csv`); 
+                document.body.appendChild(link); 
+                link.click(); 
+                document.body.removeChild(link);
             };
 
-            // 📊 คำนวณข้อมูลสำหรับ Chart
             const safeEvents = Array.isArray(events) ? events : [];
             const safeApplicants = Array.isArray(applicants) ? applicants : [];
             
-            // Top 5 Events
             const topEvents = safeEvents.map(e => ({
                 title: e.title,
                 count: safeApplicants.filter(a => a.eventId === e.id).length
             })).sort((a,b) => b.count - a.count).slice(0, 5);
             const maxCount = Math.max(...topEvents.map(e => e.count), 1);
 
-            // Category Breakdown
             const categoryCounts = {};
             safeEvents.forEach(e => {
                 const cat = e.type || 'ไม่ระบุ';
@@ -762,37 +780,41 @@
             const catArray = Object.entries(categoryCounts).map(([name, count]) => ({name, count})).sort((a,b) => b.count - a.count);
 
             return (
-                <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-40">
+                <div className="flex h-screen bg-[#F3F4F6] w-full absolute inset-0 z-40 overflow-hidden">
                     <ConfirmDialog config={confirmDialog} onCancel={() => setConfirmDialog({ isOpen: false })} onConfirm={confirmDialog.onConfirm} />
                     
-                    <div className="w-64 bg-white border-r hidden md:flex flex-col shadow-sm">
-                        <div className="p-5 border-b bg-red-50 flex items-center gap-3">
-                            <img src={HARDCODED_LOGO} className="w-10 h-10 rounded-full border border-red-200 shrink-0" />
-                            <div><h2 className="font-bold text-[#C8102E] leading-tight">Admin</h2><p className="text-[10px] text-gray-500 font-bold">EVENT SYSTEM</p></div>
+                    {/* ⚠️ Sidebar Overlay (มือถือ) */}
+                    {isSidebarOpen && (
+                        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)}></div>
+                    )}
+
+                    {/* ⚠️ Sidebar */}
+                    <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r flex flex-col shadow-xl md:shadow-none transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+                        <div className="p-5 border-b bg-red-50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <img src={HARDCODED_LOGO} className="w-10 h-10 rounded-full border border-red-200 shrink-0" />
+                                <div><h2 className="font-bold text-[#C8102E] leading-tight">Admin</h2><p className="text-[10px] text-gray-500 font-bold">EVENT SYSTEM</p></div>
+                            </div>
+                            <button className="md:hidden text-gray-500 hover:text-red-500" onClick={() => setIsSidebarOpen(false)}><i className="ph ph-x text-2xl"></i></button>
                         </div>
-                        <div className="p-3 space-y-1">
-                            <button onClick={()=>setActiveTab('overview')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-chart-pie-slice text-lg"></i> ภาพรวม</button>
-                            <button onClick={()=>setActiveTab('events')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='events'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-calendar text-lg"></i> จัดการกิจกรรม</button>
-                            <button onClick={()=>setActiveTab('applicants')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='applicants'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-users text-lg"></i> รายชื่อผู้สมัคร</button>
-                            <button onClick={()=>setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='settings'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-gear text-lg"></i> ตั้งค่า</button>
+                        <div className="p-3 space-y-1 overflow-y-auto flex-1">
+                            <button onClick={()=>{setActiveTab('overview'); setIsSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-chart-pie-slice text-lg"></i> ภาพรวม</button>
+                            <button onClick={()=>{setActiveTab('events'); setIsSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='events'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-calendar text-lg"></i> จัดการกิจกรรม</button>
+                            <button onClick={()=>{setActiveTab('applicants'); setIsSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='applicants'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-users text-lg"></i> รายชื่อผู้สมัคร</button>
+                            <button onClick={()=>{setActiveTab('settings'); setIsSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab==='settings'?'bg-[#C8102E] text-white shadow-md':'text-gray-600 hover:bg-gray-50'}`}><i className="ph ph-gear text-lg"></i> ตั้งค่า</button>
                         </div>
-                        <div className="mt-auto p-4 border-t">
+                        <div className="mt-auto p-4 border-t shrink-0">
                             <button onClick={onLogout} className="w-full flex justify-center items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-colors"><i className="ph ph-sign-out text-lg"></i> ออกระบบ</button>
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col h-full overflow-hidden">
-                        <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm md:hidden">
-                            <div className="font-bold text-[#C8102E] flex items-center gap-2"><img src={HARDCODED_LOGO} className="w-8 h-8 rounded-full border shrink-0" /> Admin Panel</div>
-                            <button onClick={onLogout} className="bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700">ออกระบบ</button>
-                        </div>
-                        
-                        <div className="bg-white border-b px-2 flex md:hidden overflow-x-auto hide-scrollbar z-10">
-                            {['overview', 'events', 'applicants', 'settings'].map(tab => (
-                                <button key={tab} onClick={()=>setActiveTab(tab)} className={`px-4 py-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab===tab?'border-[#C8102E] text-[#C8102E]':'border-transparent text-gray-500'}`}>
-                                    {tab === 'overview' ? 'ภาพรวม' : tab === 'events' ? 'กิจกรรม' : tab === 'applicants' ? 'รายชื่อ' : 'ตั้งค่า'}
-                                </button>
-                            ))}
+                    <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
+                        {/* ⚠️ Mobile Header */}
+                        <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm md:hidden shrink-0">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(true)} className="text-gray-600 hover:text-[#C8102E]"><i className="ph ph-list text-2xl"></i></button>
+                                <div className="font-bold text-[#C8102E] flex items-center gap-2"><img src={HARDCODED_LOGO} className="w-7 h-7 rounded-full border shrink-0" /> Admin Panel</div>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-50">
@@ -823,8 +845,6 @@
 
                                     {/* Charts Section */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        
-                                        {/* Bar Chart: Top Events */}
                                         <div className="bg-white p-5 rounded-2xl border shadow-sm">
                                             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4"><i className="ph ph-chart-bar text-[#C8102E] text-xl"></i> 5 กิจกรรมยอดฮิต</h3>
                                             <div className="space-y-4">
@@ -842,7 +862,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Category List */}
                                         <div className="bg-white p-5 rounded-2xl border shadow-sm">
                                             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4"><i className="ph ph-pie-chart text-[#C8102E] text-xl"></i> สัดส่วนหมวดหมู่กิจกรรม</h3>
                                             <div className="space-y-3">
@@ -970,7 +989,6 @@
                                                     <span className="text-xs text-gray-400">ลากวางไม่ได้ โปรดเรียงลำดับให้ถูกต้อง</span>
                                                 </div>
 
-                                                {/* ⚠️ ตั้งค่าส่วนที่ 1 (Intro) ของฟอร์ม */}
                                                 <div className="bg-red-50/50 p-4 md:p-5 rounded-2xl border border-red-200 shadow-sm relative mb-6">
                                                     <div className="absolute -top-3 left-4 bg-[#C8102E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1"><i className="ph ph-flag-banner"></i> หน้าแรกของฟอร์ม (Step 1)</div>
                                                     <div className="space-y-3 mt-2">
@@ -1141,7 +1159,7 @@
                                 </div>
                             )}
 
-                            {/* APPLICANTS TAB */}
+                            {/* ⚠️ APPLICANTS TAB (เพิ่มปุ่มลบรายชื่อ) */}
                             {activeTab === 'applicants' && (
                                 <div className="max-w-5xl mx-auto space-y-4 flex flex-col h-full animate-in fade-in">
                                     <div className="flex flex-col md:flex-row gap-3">
@@ -1156,23 +1174,29 @@
                                     
                                     <div className="bg-white border rounded-2xl shadow-sm flex-1 overflow-auto">
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-gray-50 border-b sticky top-0 shadow-sm z-10"><tr className="text-gray-500"><th className="p-4 font-bold">ข้อมูลผู้สมัคร</th><th className="p-4 font-bold hidden md:table-cell">คำตอบอื่นๆ</th><th className="p-4 font-bold text-right">วันเวลาที่สมัคร</th></tr></thead>
+                                            <thead className="bg-gray-50 border-b sticky top-0 shadow-sm z-10"><tr className="text-gray-500"><th className="p-4 font-bold">ข้อมูลผู้สมัคร</th><th className="p-4 font-bold hidden md:table-cell">คำตอบอื่นๆ</th><th className="p-4 font-bold text-center">จัดการ</th></tr></thead>
                                             <tbody className="divide-y">
                                                 {(applicants || []).filter(a => selectedEventId==='all' || a.eventId===selectedEventId).map(app => {
                                                     const answersArr = Object.entries(app.answers || {});
                                                     return (
-                                                    <tr key={app.id} className="hover:bg-gray-50">
-                                                        <td className="p-4">
+                                                    <tr key={app.id} className="hover:bg-gray-50 relative group">
+                                                        <td className="p-4 align-top">
                                                             <span className="font-bold text-gray-800 block text-base">{answersArr[0]?.[1] || 'ไม่ระบุชื่อ'}</span>
+                                                            <span className="text-xs text-gray-400 mt-1 block">{app.timestamp}</span>
                                                             {selectedEventId === 'all' && <span className="text-[10px] bg-red-50 text-[#C8102E] px-2 py-0.5 rounded border border-red-100 mt-1 inline-block">{events?.find(e=>e.id===app.eventId)?.title}</span>}
                                                         </td>
-                                                        <td className="p-4 hidden md:table-cell text-gray-600 text-xs space-y-1">
+                                                        <td className="p-4 hidden md:table-cell text-gray-600 text-xs space-y-1 align-top max-w-xs break-words">
                                                             {answersArr.slice(1).map(([k,v], idx) => {
                                                                 const isFile = typeof v === 'string' && v.startsWith('http');
                                                                 return <div key={idx}><span className="font-bold text-gray-500">{k}:</span> {isFile ? <a href={v} target="_blank" className="text-blue-500 hover:underline"><i className="ph ph-link"></i> ดูไฟล์แนบ</a> : Array.isArray(v) ? v.join(', ') : v}</div>
                                                             })}
                                                         </td>
-                                                        <td className="p-4 text-right"><span className="text-xs text-gray-500 font-medium block">{app.timestamp}</span></td>
+                                                        {/* ⚠️ ปุ่มลบผู้สมัครรายบุคคล */}
+                                                        <td className="p-4 text-center align-top">
+                                                            <button onClick={() => handleDeleteApplicant(app.id)} className="w-10 h-10 rounded-full bg-white border shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center justify-center mx-auto" title="ลบข้อมูลนี้">
+                                                                <i className="ph ph-trash text-lg"></i>
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 )})}
                                                 {(!applicants || applicants.length === 0 || ((applicants || []).filter(a => selectedEventId==='all' || a.eventId===selectedEventId).length === 0)) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
@@ -1210,7 +1234,7 @@
             
             const [isLoading, setIsLoading] = useState(true);
             const [isGlobalLoading, setGlobalLoading] = useState(false); 
-            const [isLoginLoading, setIsLoginLoading] = useState(false); // ⚠️ แยก State โหลดตอน Login
+            const [isLoginLoading, setIsLoginLoading] = useState(false); 
             
             const [events, setEvents] = useState([]);
             const [applicants, setApplicants] = useState([]);
@@ -1236,7 +1260,7 @@
                 const init = async () => {
                     await fetchApi();
                     setIsLoading(false);
-                    const slug = new URLSearchParams(window.location.search).get('event');
+                    const slug = newSearchParams(window.location.search).get('event');
                     if (slug) { setSelectedEventSlug(slug); setCurrentView('event-detail'); }
                 };
                 init();
@@ -1260,7 +1284,7 @@
 
             const handleAdminLogin = async (e, pwd) => {
                 e.preventDefault();
-                setIsLoginLoading(true); // เปลี่ยนแค่ปุ่ม ไม่บังจอ
+                setIsLoginLoading(true); 
                 const res = await fetchApi({ action: 'login', password: pwd });
                 setIsLoginLoading(false);
                 if (res.status === 'success') { setAlertConfig({isOpen:false}); setIsAdminAuth(true); setCurrentView('admin-dashboard'); } 
@@ -1318,7 +1342,6 @@
                                                 {[...Array(8)].map((_, i) => <div key={i} className="pwd-dot w-3.5 h-3.5 rounded-full bg-gray-300 transition-colors duration-200"></div>)}
                                             </div>
                                         </div>
-                                        {/* ⚠️ เปลี่ยนปุ่ม Login ให้โหลดเนียนๆ */}
                                         <button type="submit" disabled={isLoginLoading} className="w-full bg-[#C8102E] text-white p-3.5 rounded-xl font-bold shadow-md hover:bg-[#a10d25] transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2">
                                             {isLoginLoading ? <><i className="ph ph-spinner-gap animate-spin text-xl"></i> กำลังตรวจสอบ...</> : 'เข้าสู่ระบบ'}
                                         </button>
