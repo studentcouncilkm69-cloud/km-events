@@ -19,7 +19,6 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
-        /* Image Choice Hover Effects */
         .image-choice-card { transition: all 0.2s ease-in-out; }
         .image-choice-card:active { transform: scale(0.98); }
     </style>
@@ -31,13 +30,10 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // ⚠️ ระบบป้องกันจอขาว (Error Boundary)
+        // ⚠️ ระบบป้องกันจอขาว
         // ==========================================
         class ErrorBoundary extends React.Component {
-            constructor(props) {
-                super(props);
-                this.state = { hasError: false, error: null };
-            }
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
             static getDerivedStateFromError(error) { return { hasError: true, error }; }
             componentDidCatch(error, errorInfo) { console.error("App Crashed:", error, errorInfo); }
             render() {
@@ -46,7 +42,7 @@
                         <div className="p-8 text-center bg-red-50 min-h-screen text-gray-800 flex flex-col items-center justify-center">
                             <i className="ph ph-warning-octagon text-6xl text-red-500 mb-4"></i>
                             <h2 className="text-2xl font-bold mb-2 text-red-600">ระบบขัดข้องชั่วคราว</h2>
-                            <p className="mb-6 text-gray-600">กรุณาแคปหน้าจอนี้ส่งให้แอดมิน</p>
+                            <p className="mb-6 text-gray-600">กรุณาแคปหน้าจอนี้ส่งให้โปรแกรมเมอร์ดูครับ</p>
                             <button onClick={() => window.location.reload()} className="px-6 py-3 bg-[#C8102E] text-white font-bold rounded-xl shadow-md">โหลดหน้าเว็บใหม่</button>
                         </div>
                     );
@@ -63,7 +59,7 @@
         const HARDCODED_LOGO = "https://i.postimg.cc/wBN5btrp/rong-re-yn-kham-wng.png";
         const HARDCODED_NAME = "STUDENT COUNCIL • KHAMMUANG SCHOOL";
 
-        // เพิ่ม Field Types ใหม่ (Section, Image-ref, Image-choice)
+        // ประเภทคำถาม (เอา section และ image-ref ออกจาก dropdown)
         const FIELD_TYPES = [
             { id: 'text', label: 'คำตอบสั้น', icon: 'ph-text-t' },
             { id: 'longtext', label: 'ย่อหน้า', icon: 'ph-text-align-left' },
@@ -74,25 +70,42 @@
             { id: 'time', label: 'เวลา', icon: 'ph-clock' },
             { id: 'scale', label: 'สเกลเชิงเส้น', icon: 'ph-sliders-horizontal' },
             { id: 'file', label: 'อัปโหลดไฟล์', icon: 'ph-upload-simple' },
-            { id: 'image-ref', label: 'แสดงรูปภาพ (อ้างอิง)', icon: 'ph-image' },
-            { id: 'image-choice', label: 'ตัวเลือกรูปภาพ', icon: 'ph-images' },
-            { id: 'section', label: 'แบ่งส่วน (หน้าใหม่)', icon: 'ph-columns' }
+            { id: 'image-choice', label: 'ตัวเลือกแบบรูปภาพ', icon: 'ph-images' }
         ];
 
         const CATEGORY_OPTIONS = ["ทั่วไป/อื่นๆ", "กีฬา", "วิชาการ", "ดนตรี/ศิลปะ", "จิตอาสา", "อบรม/ค่าย", "สภานักเรียน", "ไม่ระบุ (-)"];
+
+        // ฟังก์ชันบีบอัดรูปภาพก่อนเซฟลง Sheets (เพื่อไม่ให้โค้ดพัง)
+        const compressImage = (file, callback) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 800; // บีบความกว้างสูงสุด 800px
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.7)); // บีบอัด 70%
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
 
         // --- SHARED COMPONENTS ---
         const Header = ({ onAdminTrigger, showBack, onBack }) => {
             const [logoClicks, setLogoClicks] = useState(0);
             const clickTimeoutRef = useRef(null);
-
             const handleLogoClick = () => {
                 setLogoClicks(prev => prev + 1);
                 if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
                 clickTimeoutRef.current = setTimeout(() => setLogoClicks(0), 3000);
                 if (logoClicks + 1 >= 5) { onAdminTrigger(); setLogoClicks(0); clearTimeout(clickTimeoutRef.current); }
             };
-
             return (
                 <header className="glass-panel border-b border-[#E5E7EB] px-4 py-3 flex justify-between items-center shadow-sm z-40 sticky top-0">
                     <div className="flex items-center gap-3">
@@ -275,7 +288,6 @@
             );
         };
 
-        // ⚠️ รื้อระบบ RegisterView ใหม่ ให้รองรับ Multi-step
         const RegisterView = ({ event, navigateTo, onSubmit, setGlobalLoading }) => {
             const [formData, setFormData] = useState({});
             const [errors, setErrors] = useState({});
@@ -284,22 +296,22 @@
 
             if (!event) return <div className="p-8 text-center text-gray-500">ไม่พบฟอร์มสำหรับกิจกรรมนี้</div>;
 
-            // 1. ดึงข้อมูลฟอร์ม และจัดกลุ่มเป็น Step (Section)
+            // แปลงข้อมูลคำถามให้ปลอดภัย
             let parsedFields = [];
             try {
                 if (Array.isArray(event.formFields)) parsedFields = event.formFields;
                 else if (typeof event.formFields === 'string') {
                     const trimmed = event.formFields.trim();
                     if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-                        const parsed = JSON.parse(trimmed);
-                        parsedFields = Array.isArray(parsed) ? parsed : [parsed];
+                        parsedFields = JSON.parse(trimmed);
+                        if(!Array.isArray(parsedFields)) parsedFields = [parsedFields];
                     }
                 }
             } catch(e) { console.error("Parse Error!", e); }
 
             if (parsedFields.length === 0) parsedFields = [{ id: 1, label: 'ชื่อ-นามสกุล', type: 'text', required: true }];
 
-            // จัดกลุ่มเป็น Steps
+            // จัดกลุ่มเป็น Steps ตาม Section
             let formSteps = [];
             let currentGroup = { title: 'ข้อมูลการสมัคร', description: '', fields: [] };
 
@@ -332,18 +344,17 @@
             const handleFileUpload = (fieldLabel, e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                if (file.size > 5 * 1024 * 1024) { setErrors({ ...errors, [fieldLabel]: 'ไฟล์มีขนาดใหญ่เกิน 5MB' }); e.target.value = null; return; }
+                if (file.size > 5 * 1024 * 1024) { setErrors({ ...errors, [fieldLabel]: 'ไฟล์ขนาดใหญ่เกิน 5MB' }); e.target.value = null; return; }
                 const reader = new FileReader();
                 reader.onloadend = () => { setFormData({ ...formData, [fieldLabel]: reader.result }); if (errors[fieldLabel]) setErrors({ ...errors, [fieldLabel]: null }); };
                 reader.readAsDataURL(file);
             };
 
-            // ตรวจสอบความถูกต้องเฉพาะ Step ปัจจุบัน
             const validateCurrentStep = () => {
                 const newErrors = {};
                 formSteps[currentStep].fields.forEach(f => {
                     if (!f || !f.label) return;
-                    if (f.required && f.type !== 'image-ref') { // image-ref ข้ามการ validate
+                    if (f.required && f.type !== 'image-ref') {
                         const val = formData[f.label];
                         if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
                             newErrors[f.label] = 'กรุณากรอกข้อมูลนี้ / โปรดระบุให้ครบถ้วน';
@@ -358,21 +369,11 @@
                 return true;
             };
 
-            const handleNext = () => {
-                if (validateCurrentStep()) {
-                    setCurrentStep(prev => prev + 1);
-                    window.scrollTo(0, 0);
-                }
-            };
-
-            const handlePrev = () => {
-                setCurrentStep(prev => prev - 1);
-                window.scrollTo(0, 0);
-            };
+            const handleNext = () => { if (validateCurrentStep()) { setCurrentStep(prev => prev + 1); window.scrollTo(0, 0); } };
+            const handlePrev = () => { setCurrentStep(prev => prev - 1); window.scrollTo(0, 0); };
 
             const handleSubmit = async () => {
                 if (!validateCurrentStep()) return;
-
                 setIsSubmitting(true);
                 setGlobalLoading(true); 
                 await onSubmit({ eventId: event.id, answers: formData });
@@ -385,7 +386,6 @@
             return (
                 <div className="p-4 md:p-8 py-6 bg-white min-h-screen pb-24 animate-in fade-in max-w-2xl mx-auto w-full relative">
                     
-                    {/* Progress Bar */}
                     {formSteps.length > 1 && (
                         <div className="mb-6">
                             <div className="flex justify-between text-xs font-bold text-gray-500 mb-2">
@@ -408,14 +408,12 @@
                     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                         {formSteps[currentStep].fields.map((field, idx) => {
                             if (!field || (!field.label && field.type !== 'image-ref')) return null; 
-                            
                             const fieldType = field.type || 'text';
                             
-                            // กรณีโชว์รูปอ้างอิงเฉยๆ (ไม่ต้องตอบ)
                             if (fieldType === 'image-ref') {
                                 return (
                                     <div key={idx} className="bg-gray-900 rounded-2xl overflow-hidden shadow-md relative group">
-                                        {field.imageUrl ? <img src={field.imageUrl} className="w-full h-auto" /> : <div className="p-8 text-center text-gray-400">ยังไม่ได้ระบุรูปภาพ</div>}
+                                        {field.imageUrl ? <img src={field.imageUrl} className="w-full h-auto" /> : <div className="p-8 text-center text-gray-400">ไม่ได้แนบรูปภาพอ้างอิง</div>}
                                         {field.description && <div className="absolute bottom-0 left-0 w-full bg-black/60 backdrop-blur text-white p-3 text-sm font-medium">{field.description}</div>}
                                     </div>
                                 );
@@ -459,7 +457,6 @@
                                         </div>
                                     )}
 
-                                    {/* ⚠️ ตัวเลือกรูปแบบมีรูปภาพ (Image Choices) */}
                                     {fieldType === 'image-choice' && (
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                             {(field.options||[]).map((opt, i) => {
@@ -518,7 +515,6 @@
                         })}
                     </div>
 
-                    {/* Navigation Buttons */}
                     <div className="fixed bottom-0 left-0 right-0 p-4 glass-panel border-t z-50 flex gap-3">
                         <div className="max-w-2xl mx-auto w-full flex gap-3">
                             {currentStep > 0 ? (
@@ -559,15 +555,13 @@
             const [isEditing, setIsEditing] = useState(false);
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
-            const defaultEvent = { title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
+            const defaultEvent = { title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: Date.now(), label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
             const [newEvent, setNewEvent] = useState(defaultEvent);
 
             const updateFieldType = (idx, type) => {
                 let nf = [...(newEvent.formFields || [])];
                 nf[idx].type = type;
-                if (type === 'section') { nf[idx].label = 'ส่วนใหม่'; nf[idx].description = ''; }
-                else if (type === 'image-ref') { nf[idx].imageUrl = ''; nf[idx].description = ''; nf[idx].label = 'รูปภาพอ้างอิง'; }
-                else if (['dropdown', 'radio', 'checkbox'].includes(type) && (!nf[idx].options || typeof nf[idx].options[0] !== 'object')) { 
+                if (['dropdown', 'radio', 'checkbox'].includes(type) && (!nf[idx].options || typeof nf[idx].options[0] !== 'object')) { 
                     nf[idx].options = [{ text: 'ตัวเลือก 1', imageUrl: '' }]; 
                 }
                 else if (type === 'image-choice' && (!nf[idx].options || typeof nf[idx].options[0] !== 'object')) {
@@ -585,14 +579,34 @@
             }
             const updateOptionText = (fieldIdx, optIdx, val, key = 'text') => { 
                 let nf = [...newEvent.formFields]; 
-                if(typeof nf[fieldIdx].options[optIdx] !== 'object') {
-                    nf[fieldIdx].options[optIdx] = { text: nf[fieldIdx].options[optIdx], imageUrl: '' };
-                }
+                if(typeof nf[fieldIdx].options[optIdx] !== 'object') nf[fieldIdx].options[optIdx] = { text: nf[fieldIdx].options[optIdx], imageUrl: '' };
                 nf[fieldIdx].options[optIdx][key] = val; 
                 setNewEvent({...newEvent, formFields: nf}); 
             }
+            
+            // อัปโหลดรูปภาพในตัวเลือกช้อยส์
+            const handleOptionImageUpload = (fieldIdx, optIdx, e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                compressImage(file, (base64) => { updateOptionText(fieldIdx, optIdx, base64, 'imageUrl'); });
+            };
+
             const removeOption = (fieldIdx, optIdx) => { let nf = [...newEvent.formFields]; nf[fieldIdx].options.splice(optIdx, 1); setNewEvent({...newEvent, formFields: nf}); }
             const removeField = (fieldIdx) => { let nf = [...newEvent.formFields]; nf.splice(fieldIdx, 1); setNewEvent({...newEvent, formFields: nf}); }
+
+            // เพิ่ม Section ใหม่แยกปุ่มต่างหาก
+            const addSection = () => {
+                let nf = [...newEvent.formFields];
+                nf.push({ id: Date.now(), type: 'section', label: 'ส่วนใหม่', description: '' });
+                setNewEvent({...newEvent, formFields: nf});
+            };
+
+            // เพิ่ม Image Ref ใหม่แยกปุ่มต่างหาก
+            const addImageRef = () => {
+                let nf = [...newEvent.formFields];
+                nf.push({ id: Date.now(), type: 'image-ref', label: 'รูปภาพอ้างอิง', description: '', imageUrl: '' });
+                setNewEvent({...newEvent, formFields: nf});
+            };
 
             const handleSaveEvent = async () => {
                 if(!newEvent.title || !newEvent.date) return showAlert('กรุณากรอกชื่อกิจกรรมและวันที่ให้ครบถ้วน', 'error');
@@ -625,7 +639,6 @@
                     }
                 } catch(e) { parsedFields = []; }
                 
-                // Format options to new Object format for older events
                 parsedFields = parsedFields.map(f => {
                     if(['dropdown', 'radio', 'checkbox', 'image-choice'].includes(f.type) && f.options) {
                         f.options = f.options.map(opt => typeof opt === 'string' ? {text: opt, imageUrl: ''} : opt);
@@ -832,128 +845,169 @@
                                                     
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">สถานที่</label><input type="text" value={newEvent.location} onChange={e=>setNewEvent({...newEvent, location: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
                                                     <div>
-                                                        <label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label>
-                                                        <input type="text" value={newEvent.image} placeholder="ใส่ลิงก์รูปภาพ (แนะนำ 1200x630 พิกเซล)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" />
-                                                        <p className="text-[11px] text-gray-400 mt-1">แนะนำ: ใช้รูปแนวนอน (16:9) และวางข้อความสำคัญไว้ตรงกลางภาพ</p>
+                                                        <label className="text-sm font-bold text-gray-700 mb-1 block">รูปภาพหน้าปก (อัปโหลด)</label>
+                                                        {newEvent.image ? (
+                                                            <div className="relative w-full h-24 bg-gray-100 rounded-xl overflow-hidden border">
+                                                                <img src={newEvent.image} className="w-full h-full object-cover" />
+                                                                <button onClick={()=>setNewEvent({...newEvent, image: ''})} className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:text-red-500"><i className="ph ph-x"></i></button>
+                                                            </div>
+                                                        ) : (
+                                                            <label className="flex items-center justify-center w-full h-12 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                                                                <span className="text-sm font-bold text-gray-500 flex items-center gap-2"><i className="ph ph-upload-simple text-xl"></i> อัปโหลดรูปปก</span>
+                                                                <input type="file" className="hidden" accept="image/*" onChange={(e)=>{
+                                                                    if(e.target.files[0]) compressImage(e.target.files[0], (base64) => setNewEvent({...newEvent, image: base64}));
+                                                                }} />
+                                                            </label>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div className="space-y-4 pt-4 border-t">
-                                                <div className="flex justify-between items-center">
-                                                    <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">2. สร้างแบบฟอร์มรับสมัคร</h4>
-                                                    <span className="text-xs text-gray-400">ลากวางไม่ได้ โปรดเรียงลำดับให้ถูกต้อง</span>
-                                                </div>
+                                                <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">2. สร้างแบบฟอร์มรับสมัคร</h4>
                                                 
                                                 <div className="space-y-6">
-                                                    {(newEvent.formFields || []).map((f, idx) => (
-                                                        <div key={idx} className={`p-5 bg-white border rounded-2xl shadow-sm relative group transition-colors ${f.type === 'section' ? 'border-[#C8102E] ring-1 ring-[#C8102E]/30 bg-red-50/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                                                            {(newEvent.formFields || []).length > 1 && (
-                                                                <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors"><i className="ph ph-x font-bold"></i></button>
-                                                            )}
-                                                            
-                                                            {f.type === 'section' ? (
-                                                                <div className="mb-2 border-b-2 border-red-200 pb-3">
-                                                                    <div className="flex justify-between items-center mb-2">
-                                                                        <span className="bg-[#C8102E] text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><i className="ph ph-columns"></i> ตัวแบ่งหน้า (Section)</span>
-                                                                        <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="p-1.5 border rounded-lg text-xs bg-white outline-none cursor-pointer">
-                                                                            {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
-                                                                        </select>
+                                                    {(newEvent.formFields || []).map((f, idx) => {
+                                                        
+                                                        // ---------------- เรนเดอร์ส่วนของ Section (ตัวแบ่งหน้า) ----------------
+                                                        if (f.type === 'section') {
+                                                            return (
+                                                                <div key={idx} className="relative group mt-8 mb-4">
+                                                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-red-200 border-dashed"></div></div>
+                                                                    <div className="relative flex justify-center">
+                                                                        <div className="bg-red-50 px-4 py-2 rounded-xl border border-red-200 shadow-sm flex flex-col items-center min-w-[250px]">
+                                                                            <span className="bg-[#C8102E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 flex items-center gap-1"><i className="ph ph-columns"></i> ขึ้นหน้าใหม่ (สเต็ปถัดไป)</span>
+                                                                            <input type="text" placeholder="ชื่อส่วน (เช่น ข้อมูลเพิ่มเติม)" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full text-center bg-transparent text-sm font-bold text-[#C8102E] focus:outline-none placeholder-red-300" />
+                                                                            <input type="text" placeholder="คำอธิบาย (ไม่บังคับ)" value={f.description||''} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full text-center text-xs bg-transparent text-gray-500 focus:outline-none mt-1" />
+                                                                        </div>
                                                                     </div>
-                                                                    <input type="text" placeholder="ชื่อส่วน (เช่น ข้อมูลเพิ่มเติม)" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full p-2 bg-transparent text-lg font-bold text-[#C8102E] focus:outline-none placeholder-red-300" />
-                                                                    <input type="text" placeholder="คำอธิบาย (ไม่บังคับ)" value={f.description||''} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full p-1 text-sm bg-transparent text-gray-600 focus:outline-none" />
+                                                                    <button onClick={()=>removeField(idx)} className="absolute top-1/2 -translate-y-1/2 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors"><i className="ph ph-trash font-bold"></i></button>
                                                                 </div>
-                                                            ) : f.type === 'image-ref' ? (
-                                                                <div>
-                                                                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-4">
-                                                                        <div className="flex-1 w-full font-bold text-gray-800 border-b-2 pb-2 border-gray-200 flex items-center gap-2"><i className="ph ph-image text-xl text-[#C8102E]"></i> แสดงรูปภาพอ้างอิง</div>
-                                                                        <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="w-full md:w-auto p-2 border rounded-xl text-sm bg-white outline-none cursor-pointer">
-                                                                            {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
-                                                                        </select>
+                                                            )
+                                                        }
+
+                                                        // ---------------- เรนเดอร์ส่วนของ รูปภาพอ้างอิง ----------------
+                                                        if (f.type === 'image-ref') {
+                                                            return (
+                                                                <div key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-blue-300 transition-colors">
+                                                                    <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors"><i className="ph ph-x font-bold"></i></button>
+                                                                    <div className="font-bold text-gray-800 border-b pb-2 border-gray-100 flex items-center gap-2 mb-4"><i className="ph ph-image text-xl text-blue-500"></i> แทรกรูปภาพให้ผู้สมัครดู</div>
+                                                                    
+                                                                    <div className="mb-3">
+                                                                        {f.imageUrl ? (
+                                                                            <div className="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border">
+                                                                                <img src={f.imageUrl} className="w-full h-full object-cover" />
+                                                                                <button onClick={()=>{let nf=[...newEvent.formFields]; nf[idx].imageUrl=''; setNewEvent({...newEvent, formFields: nf});}} className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow hover:text-red-500"><i className="ph ph-trash text-lg"></i></button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                                                                <span className="text-sm font-bold text-gray-500 flex items-center gap-2"><i className="ph ph-upload-simple text-xl"></i> คลิกเพื่ออัปโหลดรูปภาพ</span>
+                                                                                <input type="file" className="hidden" accept="image/*" onChange={(e)=>{
+                                                                                    if(e.target.files[0]) compressImage(e.target.files[0], (base64)=>{let nf=[...newEvent.formFields]; nf[idx].imageUrl=base64; setNewEvent({...newEvent, formFields: nf});});
+                                                                                }} />
+                                                                            </label>
+                                                                        )}
                                                                     </div>
-                                                                    <input type="text" placeholder="ใส่ลิงก์รูปภาพ (URL) ที่ต้องการแสดงให้เด็กๆ เห็น" value={f.imageUrl||''} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].imageUrl=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full p-3 bg-gray-50 border rounded-xl focus:border-[#C8102E] outline-none text-sm mb-2" />
                                                                     <input type="text" placeholder="คำอธิบายใต้ภาพ (ไม่บังคับ)" value={f.description||''} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full p-2 text-xs bg-transparent border-b border-dashed outline-none" />
                                                                 </div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-2">
-                                                                        <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white outline-none font-bold text-gray-800 w-full rounded-t-lg transition-colors" />
-                                                                        <div className="relative w-full md:w-auto min-w-[200px]">
-                                                                            <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="w-full p-3 border rounded-xl text-sm bg-white outline-none cursor-pointer appearance-none shadow-sm pr-10 font-medium">
-                                                                                {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
-                                                                            </select>
-                                                                            <i className={`ph ${FIELD_TYPES.find(t=>t.id===f.type)?.icon} absolute right-4 top-3.5 text-gray-500 text-lg pointer-events-none`}></i>
+                                                            )
+                                                        }
+
+                                                        // ---------------- เรนเดอร์คำถามปกติ ----------------
+                                                        return (
+                                                            <div key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#C8102E] transition-colors">
+                                                                {(newEvent.formFields || []).length > 1 && (
+                                                                    <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors"><i className="ph ph-x font-bold"></i></button>
+                                                                )}
+                                                                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-2">
+                                                                    <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white outline-none font-bold text-gray-800 w-full rounded-t-lg transition-colors" />
+                                                                    <div className="relative w-full md:w-auto min-w-[200px]">
+                                                                        <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="w-full p-3 border rounded-xl text-sm bg-white outline-none cursor-pointer appearance-none shadow-sm pr-10 font-medium">
+                                                                            {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
+                                                                        </select>
+                                                                        <i className={`ph ${FIELD_TYPES.find(t=>t.id===f.type)?.icon} absolute right-4 top-3.5 text-gray-500 text-lg pointer-events-none`}></i>
+                                                                    </div>
+                                                                </div>
+
+                                                                <input type="text" placeholder="คำอธิบายเพิ่มเติม (ไม่บังคับ)" value={f.description || ''} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="w-full p-2 mb-4 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-[#C8102E] outline-none text-gray-500 transition-colors" />
+                                                                
+                                                                {['dropdown', 'radio', 'checkbox'].includes(f.type) && (
+                                                                    <div className="pl-2 space-y-3 mt-4">
+                                                                        {(f.options||[]).map((opt, optIdx) => (
+                                                                            <div key={optIdx} className="flex gap-3 items-center">
+                                                                                <i className={`text-gray-400 text-lg ${f.type==='radio'?'ph-circle':f.type==='checkbox'?'ph-square':'ph-list'}`}></i>
+                                                                                <input type="text" value={opt.text || opt} onChange={e=>updateOptionText(idx, optIdx, e.target.value, 'text')} className="flex-1 border-b p-2 text-sm outline-none focus:border-[#C8102E]" placeholder={`ตัวเลือกที่ ${optIdx+1}`} />
+                                                                                {(f.options||[]).length > 1 && <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500"><i className="ph ph-x"></i></button>}
+                                                                            </div>
+                                                                        ))}
+                                                                        <button onClick={()=>addOptionToField(idx)} className="text-sm font-bold text-[#C8102E] hover:underline mt-2 flex items-center gap-1 ml-7"><i className="ph ph-plus"></i> เพิ่มตัวเลือก</button>
+                                                                    </div>
+                                                                )}
+
+                                                                {f.type === 'image-choice' && (
+                                                                    <div className="mt-4 space-y-4 bg-gray-50 p-4 rounded-xl border">
+                                                                        <p className="text-xs font-bold text-gray-500 mb-2"><i className="ph ph-images"></i> ตั้งค่าตัวเลือกรูปภาพ</p>
+                                                                        {(f.options||[]).map((opt, optIdx) => (
+                                                                            <div key={optIdx} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-lg border shadow-sm">
+                                                                                <div className="w-12 h-12 bg-gray-100 border rounded flex items-center justify-center overflow-hidden shrink-0 relative group/img">
+                                                                                    {opt.imageUrl ? (
+                                                                                        <>
+                                                                                            <img src={opt.imageUrl} className="w-full h-full object-cover" />
+                                                                                            <button onClick={()=>updateOptionText(idx, optIdx, '', 'imageUrl')} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"><i className="ph ph-trash"></i></button>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-200">
+                                                                                            <i className="ph ph-upload-simple text-xl text-gray-400"></i>
+                                                                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleOptionImageUpload(idx, optIdx, e)} />
+                                                                                        </label>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex-1 w-full">
+                                                                                    <input type="text" value={opt.text || ''} onChange={e=>updateOptionText(idx, optIdx, e.target.value, 'text')} className="w-full border-b p-2 text-sm outline-none focus:border-[#C8102E]" placeholder={`ชื่อตัวเลือก (เช่น ลาย A)`} />
+                                                                                </div>
+                                                                                {(f.options||[]).length > 1 && <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500 shrink-0 p-2"><i className="ph ph-trash"></i></button>}
+                                                                            </div>
+                                                                        ))}
+                                                                        <button onClick={()=>addOptionToField(idx)} className="text-sm font-bold text-[#C8102E] hover:underline mt-2 flex items-center gap-1"><i className="ph ph-plus"></i> เพิ่มตัวเลือกรูปภาพ</button>
+                                                                    </div>
+                                                                )}
+
+                                                                {f.type === 'scale' && (
+                                                                    <div className="flex flex-col gap-4 mt-4 bg-gray-50 p-4 rounded-xl border">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <select value={f.scaleMin||1} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMin=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white"><option value="0">0</option><option value="1">1</option></select>
+                                                                            <span>ถึง</span>
+                                                                            <select value={f.scaleMax||5} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMax=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white">{[2,3,4,5,6,7,8,9,10].map(n=><option key={n} value={n}>{n}</option>)}</select>
+                                                                        </div>
+                                                                        <div className="flex flex-col gap-2">
+                                                                            <div className="flex items-center gap-3"><span className="text-sm w-8">{f.scaleMin||1}</span><input type="text" placeholder="ป้ายกำกับ (ไม่บังคับ)" value={f.scaleMinLabel||''} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMinLabel=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg text-sm flex-1" /></div>
+                                                                            <div className="flex items-center gap-3"><span className="text-sm w-8">{f.scaleMax||5}</span><input type="text" placeholder="ป้ายกำกับ (ไม่บังคับ)" value={f.scaleMaxLabel||''} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMaxLabel=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg text-sm flex-1" /></div>
                                                                         </div>
                                                                     </div>
+                                                                )}
 
-                                                                    <input 
-                                                                        type="text" 
-                                                                        placeholder="คำอธิบายเพิ่มเติม (ไม่บังคับ)" 
-                                                                        value={f.description || ''} 
-                                                                        onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} 
-                                                                        className="w-full p-2 mb-4 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-[#C8102E] outline-none text-gray-500 transition-colors" 
-                                                                    />
-                                                                    
-                                                                    {['dropdown', 'radio', 'checkbox'].includes(f.type) && (
-                                                                        <div className="pl-2 space-y-3 mt-4">
-                                                                            {(f.options||[]).map((opt, optIdx) => (
-                                                                                <div key={optIdx} className="flex gap-3 items-center">
-                                                                                    <i className={`text-gray-400 text-lg ${f.type==='radio'?'ph-circle':f.type==='checkbox'?'ph-square':'ph-list'}`}></i>
-                                                                                    <input type="text" value={opt.text || opt} onChange={e=>updateOptionText(idx, optIdx, e.target.value, 'text')} className="flex-1 border-b p-2 text-sm outline-none focus:border-[#C8102E]" placeholder={`ตัวเลือกที่ ${optIdx+1}`} />
-                                                                                    {(f.options||[]).length > 1 && <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500"><i className="ph ph-x"></i></button>}
-                                                                                </div>
-                                                                            ))}
-                                                                            <button onClick={()=>addOptionToField(idx)} className="text-sm font-bold text-[#C8102E] hover:underline mt-2 flex items-center gap-1 ml-7"><i className="ph ph-plus"></i> เพิ่มตัวเลือก</button>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {f.type === 'image-choice' && (
-                                                                        <div className="mt-4 space-y-4 bg-gray-50 p-4 rounded-xl border">
-                                                                            <p className="text-xs font-bold text-gray-500 mb-2"><i className="ph ph-images"></i> ตั้งค่าตัวเลือกรูปภาพ</p>
-                                                                            {(f.options||[]).map((opt, optIdx) => (
-                                                                                <div key={optIdx} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-lg border shadow-sm">
-                                                                                    <div className="w-12 h-12 bg-gray-100 border rounded flex items-center justify-center overflow-hidden shrink-0">
-                                                                                        {opt.imageUrl ? <img src={opt.imageUrl} className="w-full h-full object-cover" /> : <i className="ph ph-image text-xl text-gray-300"></i>}
-                                                                                    </div>
-                                                                                    <div className="flex-1 w-full space-y-2">
-                                                                                        <input type="text" value={opt.text || ''} onChange={e=>updateOptionText(idx, optIdx, e.target.value, 'text')} className="w-full border-b p-1 text-sm outline-none focus:border-[#C8102E]" placeholder={`ชื่อตัวเลือก (เช่น ลาย A)`} />
-                                                                                        <input type="text" value={opt.imageUrl || ''} onChange={e=>updateOptionText(idx, optIdx, e.target.value, 'imageUrl')} className="w-full border-b p-1 text-xs outline-none focus:border-[#C8102E] text-blue-600" placeholder={`URL รูปภาพ (https://...)`} />
-                                                                                    </div>
-                                                                                    {(f.options||[]).length > 1 && <button onClick={()=>removeOption(idx, optIdx)} className="text-gray-400 hover:text-red-500 shrink-0 p-2"><i className="ph ph-trash"></i></button>}
-                                                                                </div>
-                                                                            ))}
-                                                                            <button onClick={()=>addOptionToField(idx)} className="text-sm font-bold text-[#C8102E] hover:underline mt-2 flex items-center gap-1"><i className="ph ph-plus"></i> เพิ่มตัวเลือกรูปภาพ</button>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {f.type === 'scale' && (
-                                                                        <div className="flex flex-col gap-4 mt-4 bg-gray-50 p-4 rounded-xl border">
-                                                                            <div className="flex items-center gap-4">
-                                                                                <select value={f.scaleMin||1} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMin=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white"><option value="0">0</option><option value="1">1</option></select>
-                                                                                <span>ถึง</span>
-                                                                                <select value={f.scaleMax||5} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMax=parseInt(e.target.value); setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg bg-white">{[2,3,4,5,6,7,8,9,10].map(n=><option key={n} value={n}>{n}</option>)}</select>
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-2">
-                                                                                <div className="flex items-center gap-3"><span className="text-sm w-8">{f.scaleMin||1}</span><input type="text" placeholder="ป้ายกำกับ (ไม่บังคับ)" value={f.scaleMinLabel||''} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMinLabel=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg text-sm flex-1" /></div>
-                                                                                <div className="flex items-center gap-3"><span className="text-sm w-8">{f.scaleMax||5}</span><input type="text" placeholder="ป้ายกำกับ (ไม่บังคับ)" value={f.scaleMaxLabel||''} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].scaleMaxLabel=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="p-2 border rounded-lg text-sm flex-1" /></div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="flex justify-end pt-4 mt-4 border-t">
-                                                                        <label className="flex items-center gap-2 text-sm font-bold bg-gray-100 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                                                                            <input type="checkbox" checked={f.required} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].required=e.target.checked; setNewEvent({...newEvent, formFields: nf})}} className="accent-[#C8102E] w-5 h-5 cursor-pointer" /> จำเป็นต้องตอบ
-                                                                        </label>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                                <div className="flex justify-end pt-4 mt-4 border-t">
+                                                                    <label className="flex items-center gap-2 text-sm font-bold bg-gray-100 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+                                                                        <input type="checkbox" checked={f.required} onChange={e=>{let nf=[...newEvent.formFields]; nf[idx].required=e.target.checked; setNewEvent({...newEvent, formFields: nf})}} className="accent-[#C8102E] w-5 h-5 cursor-pointer" /> จำเป็นต้องตอบ
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
 
-                                                <button onClick={()=>setNewEvent({...newEvent, formFields: [...(newEvent.formFields||[]), {id: Date.now(), label:'', type:'text', required:false, description:''}]})} className="mt-4 px-4 py-4 border-2 border-dashed border-gray-300 rounded-2xl text-sm font-bold text-gray-500 hover:bg-white hover:border-[#C8102E] hover:text-[#C8102E] transition-all w-full flex justify-center items-center gap-2">
-                                                    <i className="ph ph-plus-circle text-xl"></i> เพิ่มคำถาม / แบ่งหน้า
-                                                </button>
+                                                {/* ปุ่ม Action แยกต่างหากชัดเจน */}
+                                                <div className="mt-6 flex flex-wrap gap-2">
+                                                    <button onClick={()=>setNewEvent({...newEvent, formFields: [...(newEvent.formFields||[]), {id: Date.now(), label:'', type:'text', required:false, description:''}]})} className="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-bold text-gray-600 hover:bg-white hover:border-[#C8102E] hover:text-[#C8102E] transition-all flex justify-center items-center gap-2 min-w-[150px]">
+                                                        <i className="ph ph-plus-circle text-lg"></i> เพิ่มคำถาม
+                                                    </button>
+                                                    <button onClick={addSection} className="flex-1 py-3 px-4 bg-red-50 border border-red-200 rounded-xl text-sm font-bold text-[#C8102E] hover:bg-red-100 transition-all flex justify-center items-center gap-2 min-w-[150px]">
+                                                        <i className="ph ph-columns text-lg"></i> แบ่งส่วน (หน้าใหม่)
+                                                    </button>
+                                                    <button onClick={addImageRef} className="flex-1 py-3 px-4 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-600 hover:bg-blue-100 transition-all flex justify-center items-center gap-2 min-w-[150px]">
+                                                        <i className="ph ph-image text-lg"></i> แทรกรูปอ้างอิง
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="flex gap-3 pt-6 border-t mt-6">
