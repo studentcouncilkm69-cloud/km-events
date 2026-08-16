@@ -28,7 +28,7 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // ⚠️ การตั้งค่าระบบ (อัปเดตลิงก์ใหม่แล้ว)
+        // ⚠️ การตั้งค่าระบบ
         // ==========================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfq999r-lWQcNZmYZWeUxiWNmNOo5q1MQwU5E7CQruSsBliCPMOueVOoRnw5ElbkFOfQ/exec";
         const GITHUB_PAGES_URL = window.location.origin + window.location.pathname; 
@@ -103,7 +103,6 @@
         const HomeView = ({ navigateTo, events, isLoading }) => {
             const [searchQuery, setSearchQuery] = useState('');
 
-            // ป้องกัน events เป็น undefined
             const safeEvents = Array.isArray(events) ? events : [];
             const filteredEvents = safeEvents.filter(event => {
                 const titleMatch = (event.title || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -261,24 +260,26 @@
 
             if (!event) return <div className="p-8 text-center text-gray-500">ไม่พบฟอร์มสำหรับกิจกรรมนี้</div>;
 
-            // 🛡️ ป้องกันจอขาวแบบขั้นเทพ: แปลงข้อมูลชุดคำถามด้วย Try-Catch เสมอ
+            // 🛡️ ป้องกันจอขาวระดับสูงสุด: แปลงข้อมูลแบบ 10 ชั้น 
             let safeFormFields = [];
             try {
                 if (Array.isArray(event.formFields)) {
                     safeFormFields = event.formFields;
-                } else if (typeof event.formFields === 'string' && event.formFields.trim() !== '') {
-                    safeFormFields = JSON.parse(event.formFields);
+                } else if (typeof event.formFields === 'string') {
+                    const trimmed = event.formFields.trim();
+                    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+                        const parsed = JSON.parse(trimmed);
+                        safeFormFields = Array.isArray(parsed) ? parsed : [parsed];
+                    }
                 }
             } catch(e) {
-                console.error("Parse formFields error:", e);
+                console.error("Parse Error! ข้อมูลใน Sheet อาจจะพัง:", e);
                 safeFormFields = [];
             }
 
-            // ถ้าไม่มีคำถาม หรือแปลงไม่สำเร็จ ให้สร้างคำถามพื้นฐานให้เลย ป้องกันจอขาว
+            // ถ้าทุกอย่างพังหมด ให้สร้างคำถามสำรองให้เลย 1 ข้อ กันหน้าขาว
             if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
-                safeFormFields = [
-                    { id: 1, label: 'ชื่อ-นามสกุล', description: 'กรุณากรอกชื่อและนามสกุลจริง', type: 'text', required: true }
-                ];
+                safeFormFields = [{ id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true }];
             }
 
             const handleInputChange = (fieldLabel, value, isCheckbox = false) => {
@@ -307,7 +308,7 @@
             const handleSubmit = async () => {
                 const newErrors = {};
                 safeFormFields.forEach(f => {
-                    if (!f.label) return;
+                    if (!f || !f.label) return;
                     if (f.required) {
                         const val = formData[f.label];
                         if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
@@ -475,8 +476,12 @@
                 try {
                     if (Array.isArray(event.formFields)) {
                         parsedFields = event.formFields;
-                    } else if (typeof event.formFields === 'string' && event.formFields.trim() !== '') {
-                        parsedFields = JSON.parse(event.formFields);
+                    } else if (typeof event.formFields === 'string') {
+                        const trimmed = event.formFields.trim();
+                        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+                            const p = JSON.parse(trimmed);
+                            parsedFields = Array.isArray(p) ? p : [p];
+                        }
                     }
                 } catch(e) { 
                     console.error("Error parsing fields in admin", e);
@@ -626,7 +631,7 @@
                                                 </button>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                                {events?.map(e => (
+                                                {(events || []).map(e => (
                                                     <div key={e.id} className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col group">
                                                         <div className="h-32 bg-gray-200 relative shrink-0">
                                                             <img src={e.image || 'https://via.placeholder.com/400x200'} className="w-full h-full object-cover" />
@@ -805,7 +810,7 @@
                                                         <td className="p-4 text-right"><span className="text-xs text-gray-500 font-medium block">{app.timestamp}</span></td>
                                                     </tr>
                                                 )})}
-                                                {(!applicants || applicants.length === 0 || (applicants.filter(a => selectedEventId==='all' || a.eventId===selectedEventId).length === 0)) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
+                                                {(!applicants || applicants.length === 0 || ((applicants || []).filter(a => selectedEventId==='all' || a.eventId===selectedEventId).length === 0)) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
@@ -899,7 +904,13 @@
             return (
                 <div className="min-h-screen flex justify-center bg-gray-200 relative">
                     <div className={`bg-[#F3F4F6] min-h-screen flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 w-full`}>
-                        {(isLoading || isGlobalLoading) && <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-200 z-[300] overflow-hidden"><div className="w-1/2 h-full bg-[#C8102E] animate-[slide_1.5s_ease-in-out_infinite] rounded-full"></div></div>}
+                        {isGlobalLoading && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-[999] flex flex-col items-center justify-center">
+                                <i className="ph ph-spinner-gap animate-spin text-[#C8102E] text-5xl mb-4"></i>
+                                <span className="text-gray-700 font-bold">กำลังประมวลผล...</span>
+                            </div>
+                        )}
+                        {isLoading && !isGlobalLoading && <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-200 z-[300] overflow-hidden"><div className="w-1/2 h-full bg-[#C8102E] animate-[slide_1.5s_ease-in-out_infinite] rounded-full"></div></div>}
                         
                         <CustomAlert config={alertConfig} onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })} />
 
