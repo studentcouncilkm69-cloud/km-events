@@ -295,6 +295,7 @@
 
             if (!event) return <div className="p-8 text-center text-gray-500">ไม่พบฟอร์มสำหรับกิจกรรมนี้</div>;
 
+            // 🛡️ ป้องกันจอขาวแบบสุดขั้ว: เช็คข้อมูลที่ดึงมาจาก Google Sheets ทุกกรณี
             let safeFormFields = [];
             try {
                 if (Array.isArray(event.formFields)) {
@@ -307,10 +308,11 @@
                     }
                 }
             } catch(e) {
-                console.error("Parse Error!", e);
+                console.error("Parse Error! ข้อมูลใน Sheet พัง:", e);
                 safeFormFields = [];
             }
 
+            // ถ้าพังหมด สร้างฟิลด์ให้ 1 อันแบบอัตโนมัติ
             if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
                 safeFormFields = [{ id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true }];
             }
@@ -937,6 +939,25 @@
                 else showAlert(res.message || 'รหัสผ่านไม่ถูกต้อง', 'error');
             };
 
+            // ⚠️ ฟังก์ชันนี้แหละครับที่ผมเผลอลบไปรอบที่แล้ว เอาใส่คืนมาให้แล้วครับ!
+            const handleRegisterSubmit = async (data) => {
+                const now = new Date();
+                const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const eventTitle = events.find(e => e.id === data.eventId)?.title || '';
+
+                const res = await fetchApi({ 
+                    action: 'register', 
+                    applicant: { 
+                        id: `REG-${Date.now()}`, 
+                        eventId: data.eventId, 
+                        eventTitle: eventTitle, 
+                        timestamp: formattedDate, 
+                        answers: data.answers 
+                    } 
+                });
+                if (res.status === 'success') navigateTo('success');
+            };
+
             return (
                 <div className="min-h-screen flex justify-center bg-gray-200 relative">
                     <div className={`bg-[#F3F4F6] min-h-screen flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 w-full`}>
@@ -985,6 +1006,7 @@
                                 <main className="flex-1 relative pb-safe">
                                     {currentView === 'home' && <HomeView navigateTo={navigateTo} events={events} isLoading={isLoading} />}
                                     {currentView === 'event-detail' && <EventDetailView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} getApplicantCount={(id)=>applicants?.filter(a=>a.eventId===id).length||0} />}
+                                    {/* ส่งฟังก์ชัน handleRegisterSubmit ให้กับฟอร์มใช้งาน ไม่แดงแล้วครับ! */}
                                     {currentView === 'register' && <RegisterView event={events?.find(e=>e.slug===selectedEventSlug)} navigateTo={navigateTo} onSubmit={handleRegisterSubmit} setGlobalLoading={setGlobalLoading} />}
                                     {currentView === 'success' && <SuccessRegistrationView navigateTo={navigateTo} />}
                                 </main>
