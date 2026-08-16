@@ -28,7 +28,7 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // ⚠️ การตั้งค่าระบบ
+        // ⚠️ การตั้งค่าระบบ (อัปเดตลิงก์ใหม่แล้ว)
         // ==========================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfq999r-lWQcNZmYZWeUxiWNmNOo5q1MQwU5E7CQruSsBliCPMOueVOoRnw5ElbkFOfQ/exec";
         const GITHUB_PAGES_URL = window.location.origin + window.location.pathname; 
@@ -71,7 +71,7 @@
                                 <i className="ph ph-caret-left text-lg font-bold"></i>
                             </button>
                         )}
-                        <img src={HARDCODED_LOGO} alt="Logo" onClick={handleLogoClick} className="w-10 h-10 rounded-full object-cover border shadow-sm cursor-pointer hover:scale-105 transition-transform" /> 
+                        <img src={HARDCODED_LOGO} alt="Logo" onClick={handleLogoClick} className="w-10 h-10 rounded-full object-cover border shadow-sm cursor-pointer hover:scale-105 transition-transform shrink-0" /> 
                         <div className="flex flex-col justify-center">
                             <h1 className="font-bold text-[#1F2937] text-[14px] md:text-[15px] leading-tight mb-0.5">ระบบกิจกรรมและการรับสมัคร</h1>
                             <p className="text-[9px] md:text-[10px] text-[#6B7280] font-medium leading-none tracking-wide">{HARDCODED_NAME}</p>
@@ -103,11 +103,13 @@
         const HomeView = ({ navigateTo, events, isLoading }) => {
             const [searchQuery, setSearchQuery] = useState('');
 
-            const filteredEvents = events?.filter(event => {
+            // ป้องกัน events เป็น undefined
+            const safeEvents = Array.isArray(events) ? events : [];
+            const filteredEvents = safeEvents.filter(event => {
                 const titleMatch = (event.title || '').toLowerCase().includes(searchQuery.toLowerCase());
                 const typeMatch = (event.type || '').toLowerCase().includes(searchQuery.toLowerCase());
                 return titleMatch || typeMatch;
-            }) || [];
+            });
 
             return (
                 <div className="p-4 md:p-6 pb-24 animate-in fade-in duration-300 min-h-screen max-w-2xl mx-auto w-full">
@@ -121,18 +123,18 @@
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                        <h3 className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-[#1F2937] flex items-center gap-2 shrink-0">
                             <i className="ph ph-fire text-[#C8102E] text-[20px] ph-fill"></i> กิจกรรมทั้งหมด
                         </h3>
                         
-                        <div className="relative">
+                        <div className="relative w-full sm:w-auto">
                             <i className="ph ph-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-lg pointer-events-none"></i>
                             <input 
                                 type="text" 
-                                placeholder="ค้นหากิจกรรม..." 
+                                placeholder="ค้นหากิจกรรม หรือหมวดหมู่..." 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full sm:w-56 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#C8102E] shadow-sm transition-all" 
+                                className="w-full sm:w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#C8102E] shadow-sm transition-all" 
                             />
                         </div>
                     </div>
@@ -218,9 +220,9 @@
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-calendar-blank text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">วันที่จัดกิจกรรม</p><p className="text-xs font-bold text-gray-800">{event.date || '-'}</p></div></div>
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-clock text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">เวลา</p><p className="text-xs font-bold text-gray-800">{event.time || '-'}</p></div></div>
-                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start col-span-2"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5"><i className="ph ph-map-pin text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">สถานที่</p><p className="text-xs font-bold text-gray-800">{event.location || '-'}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5 shrink-0"><i className="ph ph-calendar-blank text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">วันที่จัดกิจกรรม</p><p className="text-xs font-bold text-gray-800">{event.date || '-'}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5 shrink-0"><i className="ph ph-clock text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">เวลา</p><p className="text-xs font-bold text-gray-800">{event.time || '-'}</p></div></div>
+                            <div className="bg-[#F9FAFB] p-3 rounded-xl border flex gap-3 items-start col-span-2"><div className="bg-red-50 text-[#C8102E] p-2 rounded-lg mt-0.5 shrink-0"><i className="ph ph-map-pin text-xl"></i></div><div><p className="text-[10px] text-gray-500 font-bold">สถานที่</p><p className="text-xs font-bold text-gray-800">{event.location || '-'}</p></div></div>
                         </div>
 
                         <div className="mb-8">
@@ -259,23 +261,24 @@
 
             if (!event) return <div className="p-8 text-center text-gray-500">ไม่พบฟอร์มสำหรับกิจกรรมนี้</div>;
 
+            // 🛡️ ป้องกันจอขาวแบบขั้นเทพ: แปลงข้อมูลชุดคำถามด้วย Try-Catch เสมอ
             let safeFormFields = [];
             try {
-                safeFormFields = typeof event.formFields === 'string' ? JSON.parse(event.formFields) : event.formFields;
-                if (!Array.isArray(safeFormFields)) safeFormFields = [];
+                if (Array.isArray(event.formFields)) {
+                    safeFormFields = event.formFields;
+                } else if (typeof event.formFields === 'string' && event.formFields.trim() !== '') {
+                    safeFormFields = JSON.parse(event.formFields);
+                }
             } catch(e) {
-                console.error("Parse formFields error", e);
+                console.error("Parse formFields error:", e);
                 safeFormFields = [];
             }
 
-            if (safeFormFields.length === 0) {
-                return (
-                    <div className="p-8 text-center animate-in fade-in min-h-screen bg-white">
-                        <i className="ph ph-warning-circle text-5xl text-gray-300 mb-4"></i>
-                        <p className="text-gray-500">กิจกรรมนี้ยังไม่ได้ตั้งค่าชุดคำถามรับสมัคร</p>
-                        <button onClick={() => navigateTo('event-detail', event.slug)} className="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-600">ย้อนกลับ</button>
-                    </div>
-                );
+            // ถ้าไม่มีคำถาม หรือแปลงไม่สำเร็จ ให้สร้างคำถามพื้นฐานให้เลย ป้องกันจอขาว
+            if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
+                safeFormFields = [
+                    { id: 1, label: 'ชื่อ-นามสกุล', description: 'กรุณากรอกชื่อและนามสกุลจริง', type: 'text', required: true }
+                ];
             }
 
             const handleInputChange = (fieldLabel, value, isCheckbox = false) => {
@@ -331,7 +334,7 @@
 
                     <div className="space-y-6">
                         {safeFormFields.map((field, idx) => {
-                            if (!field.label) return null; 
+                            if (!field || !field.label) return null; 
                             const options = Array.isArray(field.options) ? field.options : [];
                             
                             return (
@@ -358,7 +361,7 @@
                                         <div className="flex flex-col gap-3">
                                             {options.map((opt, i) => (
                                                 <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                                                    <div className="mt-0.5"><input type={field.type} name={field.label} value={opt} checked={field.type==='radio' ? formData[field.label]===opt : (formData[field.label]||[]).includes(opt)} onChange={(e) => handleInputChange(field.label, e.target.value, field.type==='checkbox')} className="w-5 h-5 accent-[#C8102E] cursor-pointer" /></div>
+                                                    <div className="mt-0.5 shrink-0"><input type={field.type} name={field.label} value={opt} checked={field.type==='radio' ? formData[field.label]===opt : (formData[field.label]||[]).includes(opt)} onChange={(e) => handleInputChange(field.label, e.target.value, field.type==='checkbox')} className="w-5 h-5 accent-[#C8102E] cursor-pointer" /></div>
                                                     <span className="text-sm font-medium text-gray-700 group-hover:text-black">{opt}</span>
                                                 </label>
                                             ))}
@@ -366,19 +369,24 @@
                                     )}
                                     {field.type === 'date' && <input type="date" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
                                     {field.type === 'time' && <input type="time" value={formData[field.label] || ''} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-full p-3.5 rounded-xl border focus:border-[#C8102E] outline-none shadow-sm bg-white cursor-pointer max-w-xs" />}
-                                    {field.type === 'scale' && (
-                                        <div className="bg-white p-4 rounded-xl border shadow-sm">
-                                            <div className="flex justify-between text-xs text-gray-500 mb-3 font-bold px-2"><span>{field.scaleMinLabel || 'น้อย'}</span><span>{field.scaleMaxLabel || 'มาก'}</span></div>
-                                            <div className="flex justify-between items-center px-2">
-                                                {Array.from({length: Math.max(0, (parseInt(field.scaleMax)||5) - (parseInt(field.scaleMin)||1) + 1)}, (_, i) => (parseInt(field.scaleMin)||1) + i).map(num => (
-                                                    <label key={num} className="flex flex-col items-center gap-2 cursor-pointer">
-                                                        <input type="radio" name={field.label} value={num} checked={String(formData[field.label]) === String(num)} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-5 h-5 accent-[#C8102E] cursor-pointer" />
-                                                        <span className="text-sm font-bold text-gray-600">{num}</span>
-                                                    </label>
-                                                ))}
+                                    {field.type === 'scale' && (() => {
+                                        const min = parseInt(field.scaleMin) || 1;
+                                        const max = parseInt(field.scaleMax) || 5;
+                                        const length = Math.max(0, max - min + 1);
+                                        return (
+                                            <div className="bg-white p-4 rounded-xl border shadow-sm">
+                                                <div className="flex justify-between text-xs text-gray-500 mb-3 font-bold px-2"><span>{field.scaleMinLabel || 'น้อย'}</span><span>{field.scaleMaxLabel || 'มาก'}</span></div>
+                                                <div className="flex justify-between items-center px-2">
+                                                    {Array.from({length}, (_, i) => min + i).map(num => (
+                                                        <label key={num} className="flex flex-col items-center gap-2 cursor-pointer">
+                                                            <input type="radio" name={field.label} value={num} checked={String(formData[field.label]) === String(num)} onChange={(e) => handleInputChange(field.label, e.target.value)} className="w-5 h-5 accent-[#C8102E] cursor-pointer" />
+                                                            <span className="text-sm font-bold text-gray-600">{num}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                     {field.type === 'file' && (
                                         <div>
                                             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
@@ -386,7 +394,7 @@
                                                 <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileUpload(field.label, e)} />
                                             </label>
                                             {formData[field.label] && (
-                                                <div className="mt-3 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"><span className="text-xs font-bold text-green-700 flex items-center gap-2"><i className="ph ph-check-circle text-lg"></i> แนบไฟล์เรียบร้อย</span><button onClick={()=>handleInputChange(field.label, null)} className="text-xs text-red-500 hover:underline">ลบไฟล์</button></div>
+                                                <div className="mt-3 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"><span className="text-xs font-bold text-green-700 flex items-center gap-2 truncate"><i className="ph ph-check-circle text-lg shrink-0"></i> แนบไฟล์เรียบร้อย</span><button onClick={()=>handleInputChange(field.label, null)} className="text-xs text-red-500 hover:underline shrink-0 ml-2">ลบไฟล์</button></div>
                                             )}
                                         </div>
                                     )}
@@ -427,7 +435,6 @@
             const [isCreating, setIsCreating] = useState(false);
             const [isEditing, setIsEditing] = useState(false);
             
-            // Password State
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
             const defaultEvent = { title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] };
@@ -466,10 +473,17 @@
             const openEditMode = (event) => {
                 let parsedFields = [];
                 try {
-                    parsedFields = typeof event.formFields === 'string' ? JSON.parse(event.formFields) : event.formFields;
-                } catch(e) { parsedFields = []; }
+                    if (Array.isArray(event.formFields)) {
+                        parsedFields = event.formFields;
+                    } else if (typeof event.formFields === 'string' && event.formFields.trim() !== '') {
+                        parsedFields = JSON.parse(event.formFields);
+                    }
+                } catch(e) { 
+                    console.error("Error parsing fields in admin", e);
+                    parsedFields = []; 
+                }
                 
-                setNewEvent({...event, formFields: Array.isArray(parsedFields) ? parsedFields : []});
+                setNewEvent({...event, formFields: Array.isArray(parsedFields) && parsedFields.length > 0 ? parsedFields : defaultEvent.formFields});
                 setIsEditing(true);
                 setIsCreating(true);
             };
@@ -501,11 +515,12 @@
             };
 
             const exportCSV = () => {
-                const filtered = applicants.filter(a => selectedEventId === 'all' || a.eventId === selectedEventId);
+                const safeApplicants = Array.isArray(applicants) ? applicants : [];
+                const filtered = safeApplicants.filter(a => selectedEventId === 'all' || a.eventId === selectedEventId);
                 if (filtered.length === 0) return showAlert('ไม่มีข้อมูลให้ Export', 'error');
                 
                 let headers = new Set(["Timestamp", "EventTitle"]);
-                filtered.forEach(a => Object.keys(a.answers).forEach(k => headers.add(k)));
+                filtered.forEach(a => Object.keys(a.answers || {}).forEach(k => headers.add(k)));
                 headers = Array.from(headers);
 
                 let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n"; 
@@ -513,7 +528,7 @@
                     const evtTitle = events?.find(e=>e.id === a.eventId)?.title || '';
                     let row = [a.timestamp, `"${evtTitle}"`];
                     headers.slice(2).forEach(h => {
-                        let val = a.answers[h] || "";
+                        let val = (a.answers && a.answers[h]) ? a.answers[h] : "";
                         if (Array.isArray(val)) val = val.join(" / ");
                         if (typeof val === 'string' && val.startsWith('http')) val = `"${val}"`; 
                         row.push(`"${String(val).replace(/"/g, '""')}"`);
@@ -584,10 +599,10 @@
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm text-left">
                                                 <tbody className="divide-y">
-                                                    {applicants?.slice(0,5).map((app, i) => (
+                                                    {(applicants || []).slice(0,5).map((app, i) => (
                                                         <tr key={i} className="hover:bg-gray-50">
                                                             <td className="p-4 text-xs text-gray-500 whitespace-nowrap">{app.timestamp}</td>
-                                                            <td className="p-4 font-bold text-gray-800">{Object.values(app.answers)[0] || 'ไม่มีชื่อ'}</td>
+                                                            <td className="p-4 font-bold text-gray-800">{Object.values(app.answers || {})[0] || 'ไม่มีชื่อ'}</td>
                                                             <td className="p-4 text-xs text-gray-600">{events?.find(e=>e.id===app.eventId)?.title || '-'}</td>
                                                         </tr>
                                                     ))}
@@ -620,7 +635,7 @@
                                                         <div className="p-4 flex-1 flex flex-col justify-between">
                                                             <div>
                                                                 <h4 className="font-bold text-sm mb-1">{e.title}</h4>
-                                                                <p className="text-[10px] text-gray-500 mb-3 flex items-center gap-1"><i className="ph ph-users"></i> ผู้สมัคร: {applicants?.filter(a=>a.eventId===e.id).length} / {e.capacity||'∞'}</p>
+                                                                <p className="text-[10px] text-gray-500 mb-3 flex items-center gap-1"><i className="ph ph-users"></i> ผู้สมัคร: {applicants?.filter(a=>a.eventId===e.id).length || 0} / {e.capacity||'∞'}</p>
                                                             </div>
                                                             <div className="space-y-2 mt-4">
                                                                 <button onClick={()=>toggleStatus(e.id, e.status)} className={`w-full py-2 rounded-lg text-xs font-bold transition-colors ${e.status==='open'?'bg-red-50 text-red-600 hover:bg-red-100':'bg-green-50 text-green-600 hover:bg-green-100'}`}>
@@ -666,21 +681,28 @@
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">วันปิดรับสมัคร (สิ้นสุด)</label><input type="date" value={newEvent.closeDate} onChange={e=>setNewEvent({...newEvent, closeDate: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50 cursor-pointer" /></div>
                                                     
                                                     <div><label className="text-sm font-bold text-gray-700 mb-1 block">สถานที่</label><input type="text" value={newEvent.location} onChange={e=>setNewEvent({...newEvent, location: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
-                                                    <div><label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label><input type="text" value={newEvent.image} placeholder="ใส่ลิงก์รูปภาพ (https://...)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" /></div>
+                                                    <div>
+                                                        <label className="text-sm font-bold text-gray-700 mb-1 block">URL รูปภาพหน้าปก</label>
+                                                        <input type="text" value={newEvent.image} placeholder="ใส่ลิงก์รูปภาพ (แนะนำ 1200x630 พิกเซล)" onChange={e=>setNewEvent({...newEvent, image: e.target.value})} className="w-full border p-3 rounded-xl focus:border-[#C8102E] outline-none bg-gray-50" />
+                                                        <p className="text-[11px] text-gray-400 mt-1">แนะนำ: ใช้รูปแนวนอน (16:9) และวางข้อความสำคัญไว้ตรงกลางภาพ</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                             
                                             <div className="space-y-4 pt-4 border-t">
-                                                <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">2. สร้างแบบฟอร์มรับสมัคร</h4>
+                                                <div className="flex justify-between items-center">
+                                                    <h4 className="font-bold text-[#C8102E] bg-red-50 inline-block px-3 py-1 rounded-lg text-sm">2. สร้างแบบฟอร์มรับสมัคร</h4>
+                                                    <span className="text-xs text-gray-400">ลากวางไม่ได้ โปรดเรียงลำดับให้ถูกต้อง</span>
+                                                </div>
                                                 
                                                 <div className="space-y-6">
                                                     {(newEvent.formFields || []).map((f, idx) => (
                                                         <div key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#C8102E] transition-colors">
                                                             {(newEvent.formFields || []).length > 1 && (
-                                                                <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10"><i className="ph ph-x font-bold"></i></button>
+                                                                <button onClick={()=>removeField(idx)} className="absolute -top-3 -right-3 w-8 h-8 bg-white border text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors"><i className="ph ph-x font-bold"></i></button>
                                                             )}
                                                             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-2">
-                                                                <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white outline-none font-bold text-gray-800 w-full rounded-t-lg" />
+                                                                <input type="text" placeholder="คำถาม" value={f.label} onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].label=e.target.value; setNewEvent({...newEvent, formFields: nf})}} className="flex-1 p-3 bg-gray-50 border-b-2 border-gray-300 focus:border-[#C8102E] focus:bg-white outline-none font-bold text-gray-800 w-full rounded-t-lg transition-colors" />
                                                                 <div className="relative w-full md:w-auto min-w-[200px]">
                                                                     <select value={f.type} onChange={e=>updateFieldType(idx, e.target.value)} className="w-full p-3 border rounded-xl text-sm bg-white outline-none cursor-pointer appearance-none shadow-sm pr-10 font-medium">
                                                                         {FIELD_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
@@ -694,7 +716,7 @@
                                                                 placeholder="คำอธิบายเพิ่มเติม (ไม่บังคับ) เช่น ระบุไซส์เสื้อ, ไม่ต้องใส่คำนำหน้า" 
                                                                 value={f.description || ''} 
                                                                 onChange={e=>{let nf=[...(newEvent.formFields||[])]; nf[idx].description=e.target.value; setNewEvent({...newEvent, formFields: nf})}} 
-                                                                className="w-full p-2 mb-4 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-[#C8102E] outline-none text-gray-500" 
+                                                                className="w-full p-2 mb-4 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-[#C8102E] outline-none text-gray-500 transition-colors" 
                                                             />
                                                             
                                                             {['dropdown', 'radio', 'checkbox'].includes(f.type) && (
@@ -755,7 +777,7 @@
                                     <div className="flex flex-col md:flex-row gap-3">
                                         <select value={selectedEventId} onChange={e=>setSelectedEventId(e.target.value)} className="p-3.5 border rounded-xl text-sm bg-white flex-1 outline-none focus:border-[#C8102E] shadow-sm font-bold appearance-none cursor-pointer">
                                             <option value="all">ดูรายชื่อผู้สมัครทุกกิจกรรม</option>
-                                            {events?.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
+                                            {(events || []).map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
                                         </select>
                                         <button onClick={exportCSV} className="bg-gray-800 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-sm hover:bg-black transition-colors flex items-center justify-center gap-2">
                                             <i className="ph ph-download-simple text-lg"></i> Export CSV
@@ -764,9 +786,9 @@
                                     
                                     <div className="bg-white border rounded-2xl shadow-sm flex-1 overflow-auto">
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-gray-50 border-b sticky top-0 shadow-sm"><tr className="text-gray-500"><th className="p-4 font-bold">ข้อมูลผู้สมัคร</th><th className="p-4 font-bold hidden md:table-cell">คำตอบอื่นๆ</th><th className="p-4 font-bold text-right">วันเวลาที่สมัคร</th></tr></thead>
+                                            <thead className="bg-gray-50 border-b sticky top-0 shadow-sm z-10"><tr className="text-gray-500"><th className="p-4 font-bold">ข้อมูลผู้สมัคร</th><th className="p-4 font-bold hidden md:table-cell">คำตอบอื่นๆ</th><th className="p-4 font-bold text-right">วันเวลาที่สมัคร</th></tr></thead>
                                             <tbody className="divide-y">
-                                                {applicants?.filter(a => selectedEventId==='all' || a.eventId===selectedEventId).map(app => {
+                                                {(applicants || []).filter(a => selectedEventId==='all' || a.eventId===selectedEventId).map(app => {
                                                     const answersArr = Object.entries(app.answers || {});
                                                     return (
                                                     <tr key={app.id} className="hover:bg-gray-50">
@@ -783,7 +805,7 @@
                                                         <td className="p-4 text-right"><span className="text-xs text-gray-500 font-medium block">{app.timestamp}</span></td>
                                                     </tr>
                                                 )})}
-                                                {(!applicants || applicants.length === 0) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
+                                                {(!applicants || applicants.length === 0 || (applicants.filter(a => selectedEventId==='all' || a.eventId===selectedEventId).length === 0)) && <tr><td colSpan="3" className="p-10 text-center text-gray-500">ไม่มีข้อมูลผู้สมัคร</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
