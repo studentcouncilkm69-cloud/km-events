@@ -69,6 +69,7 @@
         const CATEGORY_OPTIONS = ["ทั่วไป/อื่นๆ", "กีฬา", "วิชาการ", "ดนตรี/ศิลปะ", "จิตอาสา", "อบรม/ค่าย", "สภานักเรียน", "ไม่ระบุ (-)"];
 
         const compressImage = (file, callback) => {
+            if(!file || !file.type.startsWith('image/')) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
@@ -396,7 +397,6 @@
             return (
                 <div className="pb-24 animate-in fade-in bg-[#F9FAFB] min-h-screen max-w-2xl mx-auto w-full relative">
                     
-                    {/* 🖼️ แบนเนอร์กิจกรรมบนหัวฟอร์ม */}
                     <div className="relative h-48 sm:h-56 w-full bg-gray-900 shrink-0 shadow-sm rounded-b-3xl overflow-hidden mb-6">
                         {event.image ? (
                             <img src={event.image} alt={event.title} className="w-full h-full object-cover opacity-70" />
@@ -580,11 +580,11 @@
             const [passwords, setPasswords] = useState({ oldPass: '', newPass: '' });
             
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
             const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
             
+            // ⚠️ ปรับปรุง defaultEvent ให้ครอบคลุมฟิลด์ทั้งหมด
             const defaultEvent = { 
-                title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', 
+                id: '', slug: '', title:'', type:'ทั่วไป/อื่นๆ', details:'', date:'', time:'', location:'', image:'', capacity:'', openDate:'', closeDate:'', 
                 formIntroTitle: 'ข้อมูลการสมัคร', formIntroDesc: 'โปรดกรอกข้อมูลตามความเป็นจริงให้ครบถ้วน',
                 formFields: [{id: 1, label: 'ชื่อ-นามสกุล', description: '', type: 'text', required: true}] 
             };
@@ -638,26 +638,33 @@
                 setNewEvent({...newEvent, formFields: nf});
             };
 
+            // ⚠️ ฟังก์ชันบันทึกที่อัปเดตใหม่
             const handleSaveEvent = async () => {
                 if(!newEvent.title || !newEvent.date) return showAlert('กรุณากรอกชื่อกิจกรรมและวันที่ให้ครบถ้วน', 'error');
                 
                 setGlobalLoading(true);
                 let payload;
                 if (isEditing) {
+                    // ถ้ากำลังแก้ไข ให้ส่งข้อมูลทั้งหมดไปทับของเดิม (รวมถึง ID และ Slug เดิม)
                     payload = { action: 'updateEvent', event: newEvent };
                 } else {
+                    // ถ้าสร้างใหม่ สร้าง ID และ Slug ใหม่
                     const eventId = `EVT-${Math.floor(Math.random() * 10000)}`;
-                    // ⚠️ เปลี่ยนวิธีสร้าง Slug ให้เป็นแบบสุ่มภาษาอังกฤษตัวเล็ก 6 หลัก ป้องกันภาษาไทยยาวเหยียด
-                    const slug = Math.random().toString(36).substring(2, 8);
-                    
+                    const slug = Math.random().toString(36).substring(2, 8); // ลิงก์สั้น 6 หลัก
                     payload = { action: 'createEvent', event: { ...newEvent, id: eventId, slug: slug, status: 'open' } };
                 }
                 
                 const res = await fetchApi(payload);
                 setGlobalLoading(false);
-                if (res.status === 'success') { showAlert('บันทึกสำเร็จ!', 'success'); setIsCreating(false); setIsEditing(false); setNewEvent(defaultEvent); }
+                if (res.status === 'success') { 
+                    showAlert('บันทึกสำเร็จ!', 'success'); 
+                    setIsCreating(false); 
+                    setIsEditing(false); 
+                    setNewEvent(defaultEvent); 
+                }
             };
 
+            // ⚠️ ฟังก์ชันเปิดโหมดแก้ไขที่สมบูรณ์ขึ้น
             const openEditMode = (event) => {
                 let parsedFields = [];
                 try {
@@ -678,7 +685,13 @@
                     return f;
                 });
 
-                setNewEvent({...event, formFields: Array.isArray(parsedFields) && parsedFields.length > 0 ? parsedFields : defaultEvent.formFields});
+                // ดึงข้อมูลทั้งหมดของกิจกรรมนั้นมาใส่ใน newEvent state รวมถึง id, slug
+                setNewEvent({
+                    ...event, 
+                    formFields: Array.isArray(parsedFields) && parsedFields.length > 0 ? parsedFields : defaultEvent.formFields,
+                    formIntroTitle: event.formIntroTitle || 'ข้อมูลการสมัคร',
+                    formIntroDesc: event.formIntroDesc !== undefined ? event.formIntroDesc : 'โปรดกรอกข้อมูลตามความเป็นจริงให้ครบถ้วน'
+                });
                 setIsEditing(true);
                 setIsCreating(true);
             };
